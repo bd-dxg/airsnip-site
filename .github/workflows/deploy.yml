@@ -1,0 +1,64 @@
+name: 部署官网
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 设置 GITHUB_TOKEN 的权限
+permissions:
+  contents: read
+
+# 只允许同时进行一次部署，跳过正在运行和最新队列之间的运行队列
+# 但是，不要取消正在进行的运行，因为我们希望允许这些生产部署完成
+concurrency:
+  group: deploy-to-server
+  cancel-in-progress: false
+
+jobs:
+  # 构建并部署到自用服务器
+  build-and-deploy:
+    name: 构建并部署官网
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查仓库
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # 如果未启用 lastUpdated，则不需要
+
+      # 版本要与本机生成 pnpm-lock.yaml 的 pnpm 一致，避免版本产生 lockfile 差异
+      - name: 设置 pnpm 为包管理器
+        uses: pnpm/setup@v2
+        with:
+          version: 12.10.1
+          install: false
+      # pnpm store 缓存只留这一处：pnpm/setup 的 cache 缓存的是同一个目录，两处都开是重复缓存
+      - name: 安装Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: pnpm
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+      - name: 打包网页
+        run: pnpm build
+        env:
+          # TODO: 换成正式域名；未设置时不会生成 sitemap.xml、og:url 与 robots 的 sitemap 行
+          SITE_URL: https://airsnip.bddxg.top
+      - name: 发布到腾讯云
+        uses: easingthemes/ssh-deploy@v6
+        env:
+          # 私钥
+          SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          # SCP参数
+          ARGS: '-avzrc --delete'
+          # 源目录（末尾的斜杠表示复制目录内容而非目录本身）
+          SOURCE: 'docs/.vitepress/dist/'
+          # 服务器ip
+          REMOTE_HOST: ${{ secrets.REMOTE_TXHOST }}
+          # 用户
+          REMOTE_USER: 'root'
+          # 远程端口
+          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+          # 目标地址（TODO: 换成正式站点目录）
+          TARGET: '/opt/1panel/www/sites/airsnip.bddxg.top/index'
