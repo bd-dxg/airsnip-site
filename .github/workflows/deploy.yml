@@ -43,7 +43,6 @@ jobs:
       - name: 打包网页
         run: pnpm build
         env:
-          # TODO: 换成正式域名；未设置时不会生成 sitemap.xml、og:url 与 robots 的 sitemap 行
           SITE_URL: https://airsnip.bddxg.top
       - name: 发布到腾讯云
         uses: easingthemes/ssh-deploy@v6
@@ -60,5 +59,5 @@ jobs:
           REMOTE_USER: 'root'
           # 远程端口
           REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
-          # 目标地址（TODO: 换成正式站点目录）
+          # 目标地址
           TARGET: '/opt/1panel/www/sites/airsnip.bddxg.top/index'
