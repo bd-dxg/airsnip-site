@@ -58,8 +58,8 @@ const ASSET_NAME = `airsnip-${VERSION}-win-x64.zip`
 /** GitHub 官方下载地址 */
 export const DOWNLOAD_URL = `${REPO_URL}/releases/download/${VERSION}/${ASSET_NAME}`
 
-/** 国内加速站前缀（只做转发，文件与 GitHub 上的完全一致） */
-export const MIRROR_PREFIX = 'https://gh-proxy.org/'
+/** 国内加速站前缀（只做转发，文件与 GitHub 上的完全一致；与 danmu-site 用同一个镜像） */
+export const MIRROR_PREFIX = 'https://v4.gh-proxy.org/'
 
 /** 走加速站的下载地址 */
 export const DOWNLOAD_MIRROR_URL = `${MIRROR_PREFIX}${DOWNLOAD_URL}`

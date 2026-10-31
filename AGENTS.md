@@ -1,120 +1,66 @@
-# airsnip-site 开发指南
+# 项目说明
 
-## 项目概览
+airsnip-site：AirSnip（轻截）的产品官网 + 文档站。VitePress，产品事实集中在 `docs/.vitepress/data/site.ts`，组件与页面只取数、不写死数字。
 
-AirSnip（轻截）的产品官网与文档站：VitePress + Vue 3，纯静态、简体中文、仅浅色主题、零第三方请求。
-
-产品本体在 <https://github.com/bd-dxg/airsnip>（GPL-3.0-only）。本站只做展示与文档，下载直连 GitHub Release 资产及其加速线路，站点不承载安装包。
-
-需求与事实的唯一依据是 `airsnip-site-spec.md`；本文只补充**怎么改、怎么提交**，不重复产品事实。
+需求与事实的唯一依据是 `airsnip-site-spec.md`；本文只写**怎么改、怎么发**。
 
 ## 常用命令
 
-| 命令 | 说明 |
-| --- | --- |
-| `pnpm dev` | 本地开发 |
-| `pnpm build` | 构建，产物在 `docs/.vitepress/dist` |
-| `pnpm preview` | 预览产物（**重新 build 后必须重启**，它启动时会缓存产物目录清单，否则新哈希资源 404） |
-| `pnpm exec tsc --noEmit` | 类型检查（strict，必须零错误） |
+```powershell
+pnpm dev              # 本地预览
+pnpm build            # 构建到 docs/.vitepress/dist（推 main 由 CI 自动构建部署）
+pnpm exec tsc --noEmit # 类型检查（strict）
+```
 
-## 数据流与目录
+没有测试，`pnpm build` 零错误零警告 + `tsc --noEmit` 零错误即视为验证通过。
 
-- **产品事实只在 `docs/.vitepress/data/site.ts` 写一次**：数字、工具、快捷键、人群、截图元数据、链接常量、`VERSION`。页面与组件一律从这里取数，禁止在 Markdown 或组件里另写一遍数字。
-- 首页分区由 `theme/Layout.vue` 的 `home-hero-after` / `home-features-after` 插槽组装，文案里没有数据驱动的部分直接写在 `Layout.vue`。
-- 文档页是纯 Markdown；需要数据驱动时用 `<script setup>` 局部引入组件（例如 `features.md` 里的 `ToolShowcase`）。只有多页复用的 `Reveal` / `ShortcutTable` / `DownloadCard` 在 `theme/index.ts` 全局注册。
-- 动效：`Reveal` / `CountUp` + `custom.css` 的动效 token。**只动 `transform` / `opacity`**，颜色过渡仅用于悬停反馈。
+> `pnpm preview` 启动时会缓存产物目录清单：重新 build 后必须重启 preview，否则新的带哈希资源会 404。
 
-## 文案与事实红线
+## 发版：必须改的地方
 
-来自 `airsnip-site-spec.md` 第 15 节，改文案前先过一遍：
+**核心坑：`.md` 文件顶部的 frontmatter 是 YAML，构建时不执行 JS。** 写 `link: ${VERSION}` 会原样输出成字符串。只有 `.vue` 文件和 `.md` 里的 `<script setup>` 能读变量——本项目已把版本号收在数据层，所以只有下面几处：
 
-- 不编造用户数、下载量、Star 数、评价、荣誉。
-- 不点名对比竞品，不做竞品对比表 / 图。
-- 不生成假截图、假界面 mock；图注只描述图中**可见**内容。
-- 实测数据统一写「作者实测」，不写成保证。
-- 不引入 UI 框架、动画库、统计脚本、网络字体；不做网站深色主题与主题切换开关。
-- 不展示产品已知限制（spec 2.8），不提旧名 `jietu`，不写升级迁移内容。
-- 截图文件名用英文，`<img>` 必须带真实 `width` / `height`，除 hero 外都 `loading="lazy"`。
+1. `docs/.vitepress/data/site.ts` 的 `VERSION`
+   → 自动带动下载按钮文字、官方直链、加速直链，不用手改
+2. 同文件的 `ASSET_NAME` 模板（`airsnip-${VERSION}-win-x64.zip`）：上游改了资产命名就要同步这一行
+3. 体积有变化时：`downloadInfo.packageSize` 与 `stats` 里「下载包」那一项的 `value` / `unit`
+4. 官网域名：`config.mts` 从环境变量读 `SITE_URL`（未设置时不生成 `sitemap.xml`、`og:url` 与 robots 的 sitemap 行），实际值写在 `.github/workflows/deploy.yml` 的 `SITE_URL` 与 `TARGET`
 
-## Git 工作流
-
-### 分支
-
-- **禁止在 `main` 上直接开发**。功能 / 修复 / 重构 / 文档一律先切分支：
-  - `feature/<slug>` 新增功能、新页面、新组件
-  - `fix/<slug>` 修复
-  - `refactor/<slug>` 重构、拆文件
-  - `docs/<slug>` 纯文案 / 文档
-- 完成后开 PR、**squash 合并**回 `main`，再删掉本地分支。
-- 例外：版本号提升、README / AGENTS.md 这类发布收尾可以直接提交 `main`。
+第 1 步改完，用下面这条各验一次，**两个都返回 200 且 `Content-Length` 一致**才算对：
 
 ```powershell
-git switch -c feature/product-tour
-# 改完、自检通过
-git push -u origin feature/product-tour
-gh pr create --fill
-gh pr merge --squash --delete-branch
+$asset = 'https://github.com/bd-dxg/airsnip/releases/download/v0.6.0/airsnip-v0.6.0-win-x64.zip'
+curl.exe -sIL -o NUL -w "%{http_code} %{size_download}`n" $asset
+curl.exe -sIL -o NUL -w "%{http_code} %{size_download}`n" "https://v4.gh-proxy.org/$asset"
 ```
 
-### commit 信息
+### 下载直链格式
 
-- 一律**简体中文**，标题不加句号。
-- 标题格式：`<emoji> <动词短语>`，必要时在括号里补一句范围，例如
-  `🚀 应用版本号升至 v0.6.0（双下载线路）`、`🐛 修复文档页下载按钮文字不可见`。
-- emoji 语义固定，别自创：
+国内加速走 `v4.gh-proxy.org`（和 danmu-site 同一个镜像），原始 GitHub 链接直接拼在域名后面：
 
-| emoji | 用在 |
-| --- | --- |
-| 🎉 | 仓库初始化 |
-| ✨ | 新增功能 / 页面 / 组件 |
-| 🐛 | 修复 |
-| ♻️ | 重构、拆文件、不改行为 |
-| 🔧 | 配置、构建、工具链 |
-| 📝 | 文档、文案、注释 |
-| 🚀 | 版本号提升、发布收尾 |
-| 🔒 | 安全、隐私、依赖加固 |
-
-- 正文写**为什么改**和**影响面**；涉及数字或事实的改动，要写清改了哪几处（`site.ts` / 页面 / README），方便回溯。
-- PR 合并到 `main` 的 commit 由 GitHub 自动追加 `(#N)`；`gh pr merge --squash` **不要传 `--subject`**，否则这个后缀会丢。
-- 仓库历史保持线性：一个 PR 一个 commit，不出现 merge commit。
-
-## 版本号与发布
-
-- 版本号只有一处：`site.ts` 的 `VERSION`。下载地址由它拼出来，改一处两条线路一起变：
-
-```
-官方：https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-win-x64.zip
-加速：MIRROR_PREFIX + 官方地址
+```text
+https://v4.gh-proxy.org/https://github.com/bd-dxg/airsnip/releases/download/v0.6.0/airsnip-v0.6.0-win-x64.zip
 ```
 
-- 发版流程：
-  1. 改 `VERSION`；
-  2. 确认 Release 资产名符合 `airsnip-<VERSION>-win-x64.zip`（不一致时 `releases/expanded_assets/<tag>` 页面能看到真实资产名）；
-  3. 两条下载链接各 `curl -I -L` 一次，确认 200 且 `Content-Length` 一致；
-  4. 提交 `🚀 应用版本号升至 vX.Y.Z（…）`，推 `main`；
-  5. 需要部署时按 `SITE_URL` / `BASE` 环境变量构建，产物目录 `docs/.vitepress/dist` 直接交给静态托管。
-- 站点**不请求 GitHub API**、不做「自动取最新版本」，版本号由人工维护。
-- 首版不加 CI 工作流；要上 GitHub Pages 再单独加 `deploy.yml`（记得同时配 `SITE_URL` 与 `BASE`）。
+注意这里的路径和文件名**都带 v**（`v0.6.0` / `airsnip-v0.6.0-win-x64.zip`），和 douyin-danmu 的 `0.2.1` 格式不一样，别照抄那边的。
 
-## 提交前检查清单
+`releases/latest` 只适合当「历史版本 / 所有版本」入口，不是直接下载——资产名里带版本号，`/releases/latest/download/<文件名>` 用不了。
 
-```powershell
-pnpm build                 # 零错误零警告，无死链
-pnpm exec tsc --noEmit     # 零错误
-```
+资产名从 `https://github.com/bd-dxg/airsnip/releases/expanded_assets/<tag>` 页面能直接看到（GitHub REST API 未认证时限流，`curl -I -L` 才是验证可下载的手段）。
 
-再人工确认：
+## 部署
 
-- 改动涉及的数字与 `site.ts` 一致，`CountUp` 终值等于原文。
-- 新增文案不越红线（见上）；没有新增限制类内容、竞品名、编造数据。
-- 375 / 768 / 1280 三档没有横向滚动；关闭 JS 后内容完整可见。
-- 没有引入新的第三方请求、依赖、深色样式。
+- 推 `main` → Actions「部署官网」→ `pnpm build` → scp `docs/.vitepress/dist/` 到 `TARGET`
+- 需要的 secrets：`PRIVATE_KEY`、`REMOTE_TXHOST`、`REMOTE_PORT`（和 danmu-site 同一台服务器，可复用同一套）
+- 手动重跑：Actions 页面 Run workflow（`workflow_dispatch`）
+- 回滚：revert 对应 commit 再推，CI 会用旧产物覆盖
 
-## 禁止提交
+## 约定
 
-`.gitignore` 已覆盖，别手动 `git add -f`：
-
-- `node_modules/`、`docs/.vitepress/dist/`、`docs/.vitepress/cache/`
-- `*.log`（`dev.log` / `preview.log` 等）
-- `.planning/`（AI 助手的规划与进度文件，含本机绝对路径）
-- `.vscode/`、`.idea/`、`.DS_Store`、`Thumbs.db`
+- 产品事实只进 `data/site.ts`：数字、工具、快捷键、人群、截图元数据、链接常量。组件和 Markdown 一律从这里取数。
+- 文案红线（spec 第 15 节）：不编造用户数 / 下载量 / 评价，不点名对比竞品，不做假截图，「实测」不写成保证，不展示产品已知限制，不提旧名 `jietu`。
+- 动效只动 `transform` / `opacity`；不做网站深色主题；不引入 UI 框架、动画库、统计脚本、网络字体。
+- 截图用英文文件名，`<img>` 带真实 `width` / `height`，除 hero 外都 `loading="lazy"`。
+- 首页分区由 `theme/Layout.vue` 的两个插槽组装；文档页需要数据驱动时用 `<script setup>` 局部引入组件。
+- 直接提交 `main`（CI 自动部署），不开 PR。commit 标题 `<emoji> <中文短语>`：🎉 初始化、✨ 新增、🐛 修复、♻️ 重构、🔧 配置、📝 文档、🚀 版本号与发布、🔒 安全；正文写清为什么改、影响哪几处。
+- 不提交 `node_modules/`、`docs/.vitepress/dist|cache/`、`*.log`、`.planning/`（`.gitignore` 已配）。
