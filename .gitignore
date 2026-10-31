@@ -1,0 +1,16 @@
+# 依赖
+node_modules/
+
+# 构建产物
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# 日志与临时文件
+*.log
+.DS_Store
+Thumbs.db
+
+# 本地工具 / 编辑器状态
+.planning/
+.vscode/
+.idea/

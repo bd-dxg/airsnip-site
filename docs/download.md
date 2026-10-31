@@ -1,0 +1,19 @@
+---
+title: 下载
+description: 下载 AirSnip：Windows x64 绿色单文件，约 0.62 MB，解压即用，无需安装。
+---
+
+# 下载
+
+<DownloadCard />
+
+## 安装步骤
+
+1. 点击下载按钮获取 zip，解压到任意目录（绿色单文件，无需安装）
+2. 双击 `airsnip.exe`：程序需要管理员权限（否则无法覆盖管理员权限的窗口），首次运行弹 UAC，选「是」
+3. 启动后托盘常驻（无主窗口），`F1` 截图 / `F3` 贴图
+4. 托盘左键打开设置，右键为「设置 / 退出」
+
+配置文件：`%APPDATA%\airsnip\config.toml`
+
+完整的启动与配置说明见 [快速上手](/guide/getting-started)。
