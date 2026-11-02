@@ -4,6 +4,7 @@ import AudienceCards from './components/AudienceCards.vue'
 import DownloadCard from './components/DownloadCard.vue'
 import HeroShot from './components/HeroShot.vue'
 import ProductTour from './components/ProductTour.vue'
+import ReleaseNotes from './components/ReleaseNotes.vue'
 import Reveal from './components/Reveal.vue'
 import StatsGrid from './components/StatsGrid.vue'
 import ToolShowcase from './components/ToolShowcase.vue'
@@ -26,7 +27,7 @@ const reasons = [
   },
   {
     title: '本地处理',
-    text: '不联网、不上传、无遥测，截图只在你的机器上处理。',
+    text: '截图与标注全在本机完成，不上传、无遥测；只有检查新版本时会联网，可以关掉。',
   },
   {
     title: '删除即卸载',
@@ -39,6 +40,10 @@ const reasons = [
   <Layout>
     <template #home-hero-after>
       <HeroShot />
+    </template>
+
+    <template #home-features-before>
+      <ReleaseNotes />
     </template>
 
     <template #home-features-after>

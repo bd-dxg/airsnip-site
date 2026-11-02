@@ -30,6 +30,20 @@ export interface Audience {
   description: string
 }
 
+export interface ReleaseChange {
+  /** 卡片图标，由组件映射为内联 svg */
+  icon: 'update' | 'keyboard' | 'longshot' | 'mirror' | 'toggle' | 'size'
+  title: string
+  body: string
+}
+
+export interface ReleaseUpdate {
+  title: string
+  /** 一句话总结这次更新 */
+  lead: string
+  changes: ReleaseChange[]
+}
+
 export interface Screenshot {
   id: 'general' | 'shortcuts' | 'save' | 'appearance' | 'about'
   /** 标签页名 */
@@ -51,7 +65,10 @@ export const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY.md`
 export const PERF_URL = `${REPO_URL}/blob/main/docs/perf-m5.md`
 
 // 由作者维护：改这里即可让下载地址与页面上显示的版本号同步更新
-export const VERSION = 'v0.6.0'
+export const VERSION = 'v0.7.0'
+
+/** 当前版本的 Release 页面，用于「完整更新日志」 */
+export const RELEASE_URL = `${RELEASES_URL}/tag/${VERSION}`
 
 const ASSET_NAME = `airsnip-${VERSION}-win-x64.zip`
 
@@ -70,20 +87,20 @@ export const DESCRIPTION = '1 MB 的 Windows 截图标注工具（Rust，纯 CPU
 export const downloadInfo = {
   platform: 'Windows x64',
   portable: '绿色免安装',
-  packageSize: '0.62 MB',
+  packageSize: '0.67 MB',
   license: 'GPL-3.0-only',
 } as const
 
 export const stats: Stat[] = [
   {
     label: '单文件体积',
-    value: '1.08',
+    value: '1.21',
     unit: 'MB',
     note: '一个 exe 就是全部',
   },
   {
     label: '下载包',
-    value: '0.62',
+    value: '0.67',
     unit: 'MB',
     note: 'zip，含文档与许可证',
   },
@@ -91,7 +108,7 @@ export const stats: Stat[] = [
     label: '待机内存',
     value: '1.2',
     unit: 'MB',
-    note: '常驻托盘时 Private Working Set',
+    note: '常驻托盘时 Private Working Set；任务管理器显示约 5–10 MB，差值来自共享页',
   },
   {
     label: '待机 CPU',
@@ -116,6 +133,44 @@ export const stats: Stat[] = [
 /** 必须随数据一同展示的脚注 */
 export const statsFootnote =
   '截图会话期间按屏幕大小临时分配位图（1440p 约 15 MB），退出覆盖层立即释放。'
+
+/** 首页「这次更新了什么」：只写当前版本 Release 说明里的事实 */
+export const releaseUpdate: ReleaseUpdate = {
+  title: '这次更新了什么',
+  lead: '一句话：快捷键能清空成「未设置」，长截图拼完能直接另存，软件还会自己装新版本。',
+  changes: [
+    {
+      icon: 'update',
+      title: '点一下就自己更新',
+      body: '启动后静默检查新版本，发现时弹托盘气泡；关于页点「更新到 v0.7.0」就自动下载、替换、重启，不用回 GitHub 手动下。清单走 ed25519 签名 + SHA-256 双重校验，验签不过不会安装。',
+    },
+    {
+      icon: 'keyboard',
+      title: '快捷键终于能清空',
+      body: '每行右侧新增清除按钮，点一下设为「未设置」，不必被迫换成另一个键；底部「恢复默认」一键还原 10 项。清空后仍可从托盘菜单截图。',
+    },
+    {
+      icon: 'longshot',
+      title: '长截图拼完能直接存',
+      body: '状态条新增「另存为」与 Ctrl+S，可自选路径和格式（PNG / JPEG / WebP），命名模板与上次目录会预填；不点另存也会自动存到默认目录。',
+    },
+    {
+      icon: 'mirror',
+      title: '更新包走国内镜像',
+      body: '更新包优先走三个 gh-proxy 线路，GitHub 直连兜底，不用等转圈。',
+    },
+    {
+      icon: 'toggle',
+      title: '不想自动检查可以关',
+      body: '设置 → 「关于」→ 版本更新里有「启动时自动检查」，关掉就不再检查新版本。',
+    },
+    {
+      icon: 'size',
+      title: '体积 1.06 → 1.21 MB',
+      body: '新增更新模块与签名校验依赖，zip 从 0.61 涨到 0.67 MB。',
+    },
+  ],
+}
 
 export const tools: Tool[] = [
   {
@@ -219,7 +274,7 @@ export const audiences: Audience[] = [
   },
   {
     title: '在意隐私',
-    description: '本地处理，不联网、不上传、无遥测。',
+    description: '本地处理，不上传截图、无遥测。',
   },
 ]
 
@@ -241,8 +296,8 @@ export const screenshots: Screenshot[] = [
       '「快捷键」页：截图 F1、贴图 F3、贴图边框 Ctrl+F3、长截图 S，以及六个标注工具的按键，全部可改；底部提示无修饰键会覆盖其他程序按键。',
     alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、贴图、长截图与各标注工具的按键',
     src: '/images/shortcuts.webp',
-    width: 721,
-    height: 579,
+    width: 718,
+    height: 622,
   },
   {
     id: 'save',

@@ -63,8 +63,8 @@ docs/
 只改 `docs/.vitepress/data/site.ts`：
 
 ```ts
-export const VERSION = 'v0.6.0'                    // 版本号
-export const MIRROR_PREFIX = 'https://gh-proxy.org/' // 国内加速站前缀
+export const VERSION = 'v0.7.0'                    // 版本号
+export const MIRROR_PREFIX = 'https://v4.gh-proxy.org/' // 国内加速站前缀
 ```
 
 下载地址不是写死的，而是由版本号拼出来：
@@ -78,6 +78,12 @@ https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-
 
 换版本号后两条线路一起更新；要换加速站只改 `MIRROR_PREFIX`（换成任意「前缀 + 完整 GitHub 地址」形式的镜像站即可）。站点不请求 GitHub API，也不做「自动取最新版本」。
 
+发版时还有三处要跟手改（它们不会随 `VERSION` 自动变）：
+
+1. `stats` 里的「单文件体积」「下载包」，以及 `downloadInfo.packageSize`
+2. `releaseNotes`——首页「本次更新」区块的四张卡片，内容照当次 Release 说明写
+3. `docs/about/performance.md` 表格里的同一组数字
+
 ## 部署
 
 `pnpm build` 后把 `docs/.vitepress/dist` 整个目录交给任意静态托管或 Nginx / OpenResty 站点目录即可。产物中不含任何第三方请求（无统计、无网络字体、无 CDN、无 API 调用）。
@@ -86,11 +92,11 @@ https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-
 
 ## TODO（待作者 / 人工确认）
 
-1. **下载包体积口径**：`v0.6.0` 的 `airsnip-v0.6.0-win-x64.zip` 实测为 634,864 字节（约 0.61 MiB / 0.63 MB 十进制），页面按文档写的是「约 0.62 MB」。如需精确，改 `downloadInfo.packageSize`。
+1. **下载包体积口径**：`v0.7.0` 的 `airsnip-v0.7.0-win-x64.zip` 实测为 707,594 字节（约 0.67 MiB / 0.71 MB 十进制），页面写的是「约 0.67 MB」，与 Release 说明一致。如需精确，改 `downloadInfo.packageSize`。
 2. **截图为 WebP**：作者提供的原图为 `.webp`（文档示例写的是 `.jpg`）。为避免引入图片处理依赖，站点直接引用 webp，未做转码；`og:image` 同样是 webp，个别社交平台预览支持有限，如需要可另出一张 png。
 3. **图片体积**：6 张截图当前均小于 400 KB（最大为 `hero.webp` 约 52 KB），暂不需要压缩。
 4. **`about.webp` 中的赞助信息**：按文档要求原样展示，站点不新增任何赞助页或收款码。
 5. **已按作者指示偏离文档的 3 处**（仅记录，无需处理）：
-   - 版本号取 `v0.6.0`（文档写的是 `v0.5.0`）。
+   - 版本号取 `v0.7.0`（文档写的是 `v0.5.0`）。
    - 标注工具键序按「快捷键」页截图：`4 = 高斯模糊`、`5 = 荧光笔`（文档 2.5 / 2.6 写的是荧光笔 4、模糊 5）。
    - 下载卡片主按钮指向国内加速线路（文档要求主按钮指向 `DOWNLOAD_URL` 官方地址），官方地址作为副按钮并列展示。

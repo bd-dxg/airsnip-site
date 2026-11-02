@@ -16,6 +16,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 - 八向缩放，按住空格整体拖动选区，方向键 1px 微调（按住 `Shift` 每次 5px）
 - 选区内空白处双击 = 复制完成
 - 多显示器与负坐标布局正确（Per-Monitor V2）
+- `F1` 被清空后，也可以从托盘菜单选「截图」触发
 
 ## 标注 {#annotate}
 
@@ -54,6 +55,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 - 以当前选区为视口，自己滚动页面，`Enter` 收尾，`Ctrl+Z` 撤销最后一段
 - 全重叠区一致性校验拼接，自动识别固定页眉 / 页脚不重复
 - 拼接过程实时缩略预览
+- 完成后状态条有「另存为」按钮，也可以按 `Ctrl+S`：自选路径与格式（PNG / JPEG / WebP），命名模板与上次目录会预填；不另存时仍自动保存到默认目录
 
 ## 贴图（Pin） {#pin}
 
@@ -65,8 +67,9 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 - 自绘面板，跟随系统深浅色
 - 「外观」设置：调整软件主题，支持跟随系统切换、自适应
-- 开机自启、全部快捷键可改（含冲突检测与输入法兼容）
+- 开机自启、全部快捷键可改（含冲突检测与输入法兼容）；每一项都能清空为「未设置」，底部「恢复默认」一键还原
 - 贴图默认位置、文件名模板、主题
+- 自动更新：启动后静默检查新版本，发现后弹托盘气泡；可以在「关于」→ 版本更新里关掉「启动时自动检查」，也可以在那里手动更新
 - 「关于」页：版本、许可、第三方组件清单、项目地址
 
 <figure class="as-shot">
