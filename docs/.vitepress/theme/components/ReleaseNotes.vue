@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RELEASE_URL, VERSION, releaseUpdate, type ReleaseChange } from '../../data/site'
+import { IS_PRERELEASE, RELEASE_URL, VERSION, releaseUpdate, type ReleaseChange } from '../../data/site'
 import Reveal from './Reveal.vue'
 
 /** 卡片图标：组件只管排版，图标在这里映射成内联 svg */
@@ -15,6 +15,9 @@ const icons: Record<ReleaseChange['icon'], string> = {
   toggle:
     '<rect width="20" height="12" x="2" y="6" rx="6"/><circle cx="8" cy="12" r="2"/>',
   size: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  ocr: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/>',
+  mouse: '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>',
+  tooltip: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 }
 </script>
 
@@ -24,6 +27,7 @@ const icons: Record<ReleaseChange['icon'], string> = {
       <span class="as-release__badge">
         <span class="as-release__dot" aria-hidden="true" />
         最新 <strong>{{ VERSION }}</strong>
+        <span v-if="IS_PRERELEASE" class="as-release__tag">预发布</span>
       </span>
       <h2 id="as-release-title" class="as-section__title">{{ releaseUpdate.title }}</h2>
       <p class="as-release__lead">{{ releaseUpdate.lead }}</p>

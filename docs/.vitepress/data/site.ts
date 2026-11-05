@@ -32,7 +32,7 @@ export interface Audience {
 
 export interface ReleaseChange {
   /** 卡片图标，由组件映射为内联 svg */
-  icon: 'update' | 'keyboard' | 'longshot' | 'mirror' | 'toggle' | 'size'
+  icon: 'update' | 'keyboard' | 'longshot' | 'mirror' | 'toggle' | 'size' | 'ocr' | 'mouse' | 'tooltip'
   title: string
   body: string
 }
@@ -65,7 +65,10 @@ export const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY.md`
 export const PERF_URL = `${REPO_URL}/blob/main/docs/perf-m5.md`
 
 // 由作者维护：改这里即可让下载地址与页面上显示的版本号同步更新
-export const VERSION = 'v0.7.0'
+export const VERSION = 'v0.8.0-beta.1'
+
+/** 当前 VERSION 是否为预发布（对应 GitHub Release 的 pre-release 标记） */
+export const IS_PRERELEASE = true
 
 /** 当前版本的 Release 页面，用于「完整更新日志」 */
 export const RELEASE_URL = `${RELEASES_URL}/tag/${VERSION}`
@@ -81,26 +84,33 @@ export const MIRROR_PREFIX = 'https://v4.gh-proxy.org/'
 /** 走加速站的下载地址 */
 export const DOWNLOAD_MIRROR_URL = `${MIRROR_PREFIX}${DOWNLOAD_URL}`
 
+/** 稳定版：预发布期间作为备用入口，等 VERSION 转正后删掉这组常量 */
+export const STABLE_VERSION = 'v0.7.0'
+export const STABLE_PACKAGE_SIZE = '0.67 MB'
+const STABLE_ASSET_NAME = `airsnip-${STABLE_VERSION}-win-x64.zip`
+export const STABLE_DOWNLOAD_URL = `${REPO_URL}/releases/download/${STABLE_VERSION}/${STABLE_ASSET_NAME}`
+export const STABLE_DOWNLOAD_MIRROR_URL = `${MIRROR_PREFIX}${STABLE_DOWNLOAD_URL}`
+
 /** 第 2.1 节一句话，用于站点 description / meta */
 export const DESCRIPTION = '1 MB 的 Windows 截图标注工具（Rust，纯 CPU 渲染，待机 0% CPU）'
 
 export const downloadInfo = {
   platform: 'Windows x64',
   portable: '绿色免安装',
-  packageSize: '0.67 MB',
+  packageSize: '0.77 MB',
   license: 'GPL-3.0-only',
 } as const
 
 export const stats: Stat[] = [
   {
     label: '单文件体积',
-    value: '1.21',
+    value: '1.38',
     unit: 'MB',
     note: '一个 exe 就是全部',
   },
   {
     label: '下载包',
-    value: '0.67',
+    value: '0.77',
     unit: 'MB',
     note: 'zip，含文档与许可证',
   },
@@ -137,37 +147,37 @@ export const statsFootnote =
 /** 首页「这次更新了什么」：只写当前版本 Release 说明里的事实 */
 export const releaseUpdate: ReleaseUpdate = {
   title: '这次更新了什么',
-  lead: '一句话：快捷键能清空成「未设置」，长截图拼完能直接另存，软件还会自己装新版本。',
+  lead: '一句话：截图里的字能直接认出来，热键也能绑到鼠标中键和侧键了。',
   changes: [
     {
-      icon: 'update',
-      title: '点一下就自己更新',
-      body: '启动后静默检查新版本，发现时弹托盘气泡；关于页点「更新到 v0.7.0」就自动下载、替换、重启，不用回 GitHub 手动下。清单走 ed25519 签名 + SHA-256 双重校验，验签不过不会安装。',
+      icon: 'ocr',
+      title: 'OCR：框完按 T 直接取字',
+      body: 'F1 框选后按 T（或点工具栏「OCR」按钮），覆盖层关闭并弹出文字卡片：可以直接改错字、拖选、Ctrl+A/C/V/X/Z、右键菜单，左下「复制」一键写剪贴板，右下「自动复制」默认关闭，顶部图钉可置顶对照粘贴。识别走 Windows 自带的 Windows.Media.Ocr，图片不出本机，不联网、不要 API key。默认关闭，在设置 → 「OCR 翻译」里打开总开关后生效。',
     },
     {
       icon: 'keyboard',
-      title: '快捷键终于能清空',
-      body: '每行右侧新增清除按钮，点一下设为「未设置」，不必被迫换成另一个键；底部「恢复默认」一键还原 10 项。清空后仍可从托盘菜单截图。',
+      title: '快捷键认识 PrintScreen 了',
+      body: 'PrtScn 此前点了键帽再按没反应——系统只派发松键消息、没有按下消息，现在改为在松键时捕获。顺带补齐 Pause、Backspace、CapsLock、Home、End、PgUp、PgDn、Insert、NumLock、ScrollLock 的键名显示。',
     },
     {
-      icon: 'longshot',
-      title: '长截图拼完能直接存',
-      body: '状态条新增「另存为」与 Ctrl+S，可自选路径和格式（PNG / JPEG / WebP），命名模板与上次目录会预填；不点另存也会自动存到默认目录。',
+      icon: 'mouse',
+      title: '鼠标中键 / 侧键也能当热键',
+      body: '截图、贴图、贴图边框都能绑到鼠标中键与两个侧键。用 Raw Input 订阅，不走低级鼠标钩子——钩子每次鼠标移动都要跨进程回调，超时会被系统静默卸载。',
     },
     {
-      icon: 'mirror',
-      title: '更新包走国内镜像',
-      body: '更新包优先走三个 gh-proxy 线路，GitHub 直连兜底，不用等转圈。',
+      icon: 'tooltip',
+      title: '工具栏按钮会自己说明',
+      body: '鼠标在按钮上停约 400 ms 弹出气泡，显示「名称 · 快捷键」；改键后提示跟着变。选中对象后悬停右上角小圆，也会提示「圆角 · 拖动调节」。',
     },
     {
-      icon: 'toggle',
-      title: '不想自动检查可以关',
-      body: '设置 → 「关于」→ 版本更新里有「启动时自动检查」，关掉就不再检查新版本。',
+      icon: 'update',
+      title: '不再依赖 VC++ 运行库',
+      body: 'exe 改为静态链接 MSVC 运行时。此前没装 VC++ 运行库的机器双击会报「找不到 VCRUNTIME140.dll」，现在开箱即用；打包脚本新增 PE 导入表校验，防止这个依赖被悄悄带回来。',
     },
     {
       icon: 'size',
-      title: '体积 1.06 → 1.21 MB',
-      body: '新增更新模块与签名校验依赖，zip 从 0.61 涨到 0.67 MB。',
+      title: '体积 1.21 → 1.38 MB',
+      body: '静态链接运行时 +128 KB，OCR 模块与 WinRT 依赖 +50 KB；zip 从 0.67 涨到 0.77 MB。',
     },
   ],
 }
@@ -215,6 +225,7 @@ export const shortcuts: Shortcut[] = [
   { keys: ['Ctrl', 'S'], action: '另存为（PNG / JPEG / WebP）', scope: 'overlay' },
   { keys: ['F3'], action: '把选区贴到屏幕', scope: 'overlay' },
   { keys: ['S'], action: '长截图（当前选区为视口）', scope: 'overlay' },
+  { keys: ['T'], action: 'OCR 识别选区文字（需在设置里打开总开关）', scope: 'overlay' },
   {
     keys: ['1 – 6'],
     action: '切换工具：矩形 / 箭头 / 文本 / 模糊 / 荧光笔 / 聚光灯（可改）',

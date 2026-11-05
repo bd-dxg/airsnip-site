@@ -1,6 +1,6 @@
 ---
 title: 下载
-description: 下载 AirSnip：Windows x64 绿色单文件，约 0.67 MB，解压即用，无需安装。
+description: 下载 AirSnip：Windows x64 绿色单文件，约 0.77 MB，解压即用，无需安装。
 ---
 
 # 下载
