@@ -63,9 +63,7 @@ docs/
 只改 `docs/.vitepress/data/site.ts`：
 
 ```ts
-export const VERSION = 'v0.8.0-beta.1'             // 版本号
-export const IS_PRERELEASE = true                  // 预发布标记：下载卡片会显示提示与稳定版入口
-export const STABLE_VERSION = 'v0.7.0'             // 预发布期间作为备用入口的正式版
+export const VERSION = 'v0.8.1'                    // 版本号
 export const MIRROR_PREFIX = 'https://v4.gh-proxy.org/' // 国内加速站前缀
 ```
 
@@ -94,11 +92,11 @@ https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-
 
 ## TODO（待作者 / 人工确认）
 
-1. **下载包体积口径**：`v0.8.0-beta.1` 的 `airsnip-v0.8.0-beta.1-win-x64.zip` 实测为 806,752 字节（约 0.77 MiB / 0.81 MB 十进制），页面写的是「约 0.77 MB」，与 Release 说明一致。如需精确，改 `downloadInfo.packageSize`。
+1. **下载包体积口径**：`v0.8.1` 的 `airsnip-v0.8.1-win-x64.zip` 实测为 817,129 字节（约 0.78 MiB / 0.82 MB 十进制），页面写的是「约 0.78 MB」，与 Release 说明一致。如需精确，改 `downloadInfo.packageSize`。
 2. **截图为 WebP**：作者提供的原图为 `.webp`（文档示例写的是 `.jpg`）。为避免引入图片处理依赖，站点直接引用 webp，未做转码；`og:image` 同样是 webp，个别社交平台预览支持有限，如需要可另出一张 png。
 3. **图片体积**：6 张截图当前均小于 400 KB（最大为 `hero.webp` 约 52 KB），暂不需要压缩。
 4. **`about.webp` 中的赞助信息**：按文档要求原样展示，站点不新增任何赞助页或收款码。
 5. **已按作者指示偏离文档的 3 处**（仅记录，无需处理）：
-   - 版本号取 `v0.8.0-beta.1`（文档写的是 `v0.5.0`）。
+   - 版本号取 `v0.8.1`（文档写的是 `v0.5.0`）。
    - 标注工具键序按「快捷键」页截图：`4 = 高斯模糊`、`5 = 荧光笔`（文档 2.5 / 2.6 写的是荧光笔 4、模糊 5）。
    - 下载卡片主按钮指向国内加速线路（文档要求主按钮指向 `DOWNLOAD_URL` 官方地址），官方地址作为副按钮并列展示。

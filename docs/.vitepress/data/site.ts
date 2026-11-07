@@ -32,7 +32,17 @@ export interface Audience {
 
 export interface ReleaseChange {
   /** 卡片图标，由组件映射为内联 svg */
-  icon: 'update' | 'keyboard' | 'longshot' | 'mirror' | 'toggle' | 'size' | 'ocr' | 'mouse' | 'tooltip'
+  icon:
+    | 'update'
+    | 'keyboard'
+    | 'longshot'
+    | 'mirror'
+    | 'toggle'
+    | 'size'
+    | 'ocr'
+    | 'mouse'
+    | 'tooltip'
+    | 'hdr'
   title: string
   body: string
 }
@@ -65,10 +75,7 @@ export const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY.md`
 export const PERF_URL = `${REPO_URL}/blob/main/docs/perf-m5.md`
 
 // 由作者维护：改这里即可让下载地址与页面上显示的版本号同步更新
-export const VERSION = 'v0.8.0-beta.1'
-
-/** 当前 VERSION 是否为预发布（对应 GitHub Release 的 pre-release 标记） */
-export const IS_PRERELEASE = true
+export const VERSION = 'v0.8.1'
 
 /** 当前版本的 Release 页面，用于「完整更新日志」 */
 export const RELEASE_URL = `${RELEASES_URL}/tag/${VERSION}`
@@ -84,33 +91,26 @@ export const MIRROR_PREFIX = 'https://v4.gh-proxy.org/'
 /** 走加速站的下载地址 */
 export const DOWNLOAD_MIRROR_URL = `${MIRROR_PREFIX}${DOWNLOAD_URL}`
 
-/** 稳定版：预发布期间作为备用入口，等 VERSION 转正后删掉这组常量 */
-export const STABLE_VERSION = 'v0.7.0'
-export const STABLE_PACKAGE_SIZE = '0.67 MB'
-const STABLE_ASSET_NAME = `airsnip-${STABLE_VERSION}-win-x64.zip`
-export const STABLE_DOWNLOAD_URL = `${REPO_URL}/releases/download/${STABLE_VERSION}/${STABLE_ASSET_NAME}`
-export const STABLE_DOWNLOAD_MIRROR_URL = `${MIRROR_PREFIX}${STABLE_DOWNLOAD_URL}`
-
 /** 第 2.1 节一句话，用于站点 description / meta */
 export const DESCRIPTION = '1 MB 的 Windows 截图标注工具（Rust，纯 CPU 渲染，待机 0% CPU）'
 
 export const downloadInfo = {
   platform: 'Windows x64',
   portable: '绿色免安装',
-  packageSize: '0.77 MB',
+  packageSize: '0.78 MB',
   license: 'GPL-3.0-only',
 } as const
 
 export const stats: Stat[] = [
   {
     label: '单文件体积',
-    value: '1.38',
+    value: '1.40',
     unit: 'MB',
     note: '一个 exe 就是全部',
   },
   {
     label: '下载包',
-    value: '0.77',
+    value: '0.78',
     unit: 'MB',
     note: 'zip，含文档与许可证',
   },
@@ -147,37 +147,37 @@ export const statsFootnote =
 /** 首页「这次更新了什么」：只写当前版本 Release 说明里的事实 */
 export const releaseUpdate: ReleaseUpdate = {
   title: '这次更新了什么',
-  lead: '一句话：截图里的字能直接认出来，热键也能绑到鼠标中键和侧键了。',
+  lead: '一句话：HDR 截图不再发白，标注能盖着画，系统键热键也修好了——OCR 随本版转正。',
   changes: [
     {
-      icon: 'ocr',
-      title: 'OCR：框完按 T 直接取字',
-      body: 'F1 框选后按 T（或点工具栏「OCR」按钮），覆盖层关闭并弹出文字卡片：可以直接改错字、拖选、Ctrl+A/C/V/X/Z、右键菜单，左下「复制」一键写剪贴板，右下「自动复制」默认关闭，顶部图钉可置顶对照粘贴。识别走 Windows 自带的 Windows.Media.Ocr，图片不出本机，不联网、不要 API key。默认关闭，在设置 → 「OCR 翻译」里打开总开关后生效。',
-    },
-    {
-      icon: 'keyboard',
-      title: '快捷键认识 PrintScreen 了',
-      body: 'PrtScn 此前点了键帽再按没反应——系统只派发松键消息、没有按下消息，现在改为在松键时捕获。顺带补齐 Pause、Backspace、CapsLock、Home、End、PgUp、PgDn、Insert、NumLock、ScrollLock 的键名显示。',
+      icon: 'hdr',
+      title: 'HDR 桌面不再截出白板',
+      body: 'HDR 显示器上截出来的图整体发白——桌面是 FP16 scRGB 色彩空间，老办法抓到的是被当成 sRGB 的线性高亮度值。现在 HDR 激活时改用 DXGI Desktop Duplication 抓 FP16 帧，再按显示器的 SDR 白点做色调映射，整屏纯白像素占比从 23.37% 降到 0.06%。未激活 HDR 时仍走原来更快的路径（长截图的区域抓取一并覆盖）。',
     },
     {
       icon: 'mouse',
-      title: '鼠标中键 / 侧键也能当热键',
-      body: '截图、贴图、贴图边框都能绑到鼠标中键与两个侧键。用 Raw Input 订阅，不走低级鼠标钩子——钩子每次鼠标移动都要跨进程回调，超时会被系统静默卸载。',
+      title: '已有图形上也能接着画',
+      body: '用聚光灯框住一片区域后，换荧光笔在该区域内拖拽什么都画不出来（鼠标还变成移动光标）。原因是对象内部按下只有「整块命中就移动」一条通道。现在对象内部按下改为绘制——拖动画新标注、无位移松手则选中；要移动对象改走 Ctrl + 拖动本体或拖包围框边缘。',
     },
     {
-      icon: 'tooltip',
-      title: '工具栏按钮会自己说明',
-      body: '鼠标在按钮上停约 400 ms 弹出气泡，显示「名称 · 快捷键」；改键后提示跟着变。选中对象后悬停右上角小圆，也会提示「圆角 · 拖动调节」。',
+      icon: 'keyboard',
+      title: 'F10 这类系统键能当热键了',
+      body: 'F10 是系统菜单键，Alt + 键也走 WM_SYSKEYDOWN，此前只处理 WM_KEYDOWN，把截图 / 贴图 / 长截图 / OCR 热键设成 F10 时在覆盖层里完全没反应。现在覆盖层新增 WM_SYSKEYDOWN 分支，只接管未按 Alt 的动作键，Alt+F4 / Alt+S 等组合仍透传给系统。',
+    },
+    {
+      icon: 'toggle',
+      title: '设置面板跟随系统换肤',
+      body: '选「跟随系统」却在切换系统深 / 浅色时面板不变。现在面板自己处理 WM_SETTINGCHANGE，并额外用 RegNotifyChangeKeyValue 监听注册表兜底（管理员进程可能被 UIPI 挡住用户级进程的主题广播），事件驱动、不做轮询，DWM 深色标题栏同步更新。',
     },
     {
       icon: 'update',
-      title: '不再依赖 VC++ 运行库',
-      body: 'exe 改为静态链接 MSVC 运行时。此前没装 VC++ 运行库的机器双击会报「找不到 VCRUNTIME140.dll」，现在开箱即用；打包脚本新增 PE 导入表校验，防止这个依赖被悄悄带回来。',
+      title: '托盘图标不再永久失踪',
+      body: '此前 NIM_ADD 失败后只重试 5 秒；实机里 explorer 曾比 AirSnip 晚启动 114 秒，窗口一过图标就永久缺失。重试窗口放宽到 3 分钟（36 次 × 5 秒），仍是失败才挂计时器、成功即撤销，不引入常驻轮询。',
     },
     {
-      icon: 'size',
-      title: '体积 1.21 → 1.38 MB',
-      body: '静态链接运行时 +128 KB，OCR 模块与 WinRT 依赖 +50 KB；zip 从 0.67 涨到 0.77 MB。',
+      icon: 'ocr',
+      title: '功能名统一成「OCR」',
+      body: '设置面板页签「取字翻译」→「OCR 翻译」、气泡标题「AirSnip 取字」→「AirSnip OCR」、工具栏按钮悬浮提示补全，叫法全站统一。配置段与字段名本就是 ocr，老配置无需迁移。',
     },
   ],
 }

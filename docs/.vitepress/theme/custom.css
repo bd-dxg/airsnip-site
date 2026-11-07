@@ -310,19 +310,6 @@ button:focus-visible,
   box-shadow: 0 0 0 3px rgba(99, 177, 238, 0.24);
 }
 
-/* 预发布标签：跟在版本号后面，弱化处理 */
-.as-release__tag {
-  margin-left: 2px;
-  padding: 0 6px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 18px;
-  color: var(--vp-c-text-2);
-  background-color: var(--vp-c-bg);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 999px;
-}
-
 .as-release__head .as-section__title {
   margin: 0;
   font-size: clamp(26px, 2.6vw, 34px);
@@ -670,68 +657,13 @@ button:focus-visible,
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
-}
-
-/* 测试版 / 正式版两栏，窄屏堆叠 */
-.as-download__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  width: 100%;
-}
-
-@media (max-width: 640px) {
-  .as-download__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.as-download__col {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.as-download__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.as-download__channel {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--vp-c-text-2);
-}
-
-.as-download__version {
-  margin: 0;
-  font-family: var(--vp-font-family-mono);
-  font-size: 21px;
-  font-weight: 700;
-  color: var(--vp-c-text-1);
-}
-
-.as-download__desc {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--vp-c-text-2);
+  padding: 24px;
 }
 
 .as-download__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  width: 100%;
-  margin-top: 4px;
-}
-
-.as-download__actions .as-button {
-  padding: 11px 14px;
-  white-space: nowrap;
 }
 
 /* 副按钮：官方地址 */
@@ -770,9 +702,7 @@ button:focus-visible,
 
 /* 文档页内 .vp-doc p 自带上下 margin，会与卡片 gap 叠加 */
 .vp-doc .as-download__meta,
-.vp-doc .as-download__note,
-.vp-doc .as-download__desc,
-.vp-doc .as-download__version {
+.vp-doc .as-download__note {
   margin: 0;
 }
 
