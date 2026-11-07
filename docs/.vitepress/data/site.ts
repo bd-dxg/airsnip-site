@@ -43,6 +43,10 @@ export interface ReleaseChange {
     | 'mouse'
     | 'tooltip'
     | 'hdr'
+    | 'number'
+    | 'palette'
+    | 'clipboard'
+    | 'layout'
   title: string
   body: string
 }
@@ -75,7 +79,7 @@ export const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY.md`
 export const PERF_URL = `${REPO_URL}/blob/main/docs/perf-m5.md`
 
 // 由作者维护：改这里即可让下载地址与页面上显示的版本号同步更新
-export const VERSION = 'v0.8.1'
+export const VERSION = 'v0.9.0'
 
 /** 当前版本的 Release 页面，用于「完整更新日志」 */
 export const RELEASE_URL = `${RELEASES_URL}/tag/${VERSION}`
@@ -97,20 +101,20 @@ export const DESCRIPTION = '1 MB 的 Windows 截图标注工具（Rust，纯 CPU
 export const downloadInfo = {
   platform: 'Windows x64',
   portable: '绿色免安装',
-  packageSize: '0.78 MB',
+  packageSize: '0.79 MB',
   license: 'GPL-3.0-only',
 } as const
 
 export const stats: Stat[] = [
   {
     label: '单文件体积',
-    value: '1.40',
+    value: '1.43',
     unit: 'MB',
     note: '一个 exe 就是全部',
   },
   {
     label: '下载包',
-    value: '0.78',
+    value: '0.79',
     unit: 'MB',
     note: 'zip，含文档与许可证',
   },
@@ -147,37 +151,37 @@ export const statsFootnote =
 /** 首页「这次更新了什么」：只写当前版本 Release 说明里的事实 */
 export const releaseUpdate: ReleaseUpdate = {
   title: '这次更新了什么',
-  lead: '一句话：HDR 截图不再发白，标注能盖着画，系统键热键也修好了——OCR 随本版转正。',
+  lead: '一句话：新增序号标记、自定义取色与贴图就地补标注，顺手修掉飞书粘贴、设置面板与右键误触三个毛病。',
   changes: [
     {
-      icon: 'hdr',
-      title: 'HDR 桌面不再截出白板',
-      body: 'HDR 显示器上截出来的图整体发白——桌面是 FP16 scRGB 色彩空间，老办法抓到的是被当成 sRGB 的线性高亮度值。现在 HDR 激活时改用 DXGI Desktop Duplication 抓 FP16 帧，再按显示器的 SDR 白点做色调映射，整屏纯白像素占比从 23.37% 降到 0.06%。未激活 HDR 时仍走原来更快的路径（长截图的区域抓取一并覆盖）。',
+      icon: 'number',
+      title: '新增「序号」标注',
+      body: '按下放圆形徽标、拖动引出箭头（Shift 吸附水平 / 垂直 / 45°）。编号自动取已有最大值 +1，删除 / 撤销不重排；双击徽标可直接改编号，颜色跟调色板、滚轮连续调大小，数字按底色自动取反色。工具栏新增「序号」按钮，工具切换键默认 7。',
     },
     {
-      icon: 'mouse',
-      title: '已有图形上也能接着画',
-      body: '用聚光灯框住一片区域后，换荧光笔在该区域内拖拽什么都画不出来（鼠标还变成移动光标）。原因是对象内部按下只有「整块命中就移动」一条通道。现在对象内部按下改为绘制——拖动画新标注、无位移松手则选中；要移动对象改走 Ctrl + 拖动本体或拖包围框边缘。',
+      icon: 'palette',
+      title: '标注颜色能自己调了',
+      body: '工具栏颜色组在 5 个预设色块后多了一个自定义色块，点开是覆盖层内自绘的取色面板（色相条 + 饱和度 / 明度方块 + 2×6 快捷色），不再调用不适用的系统取色对话框。拖动实时预览选中对象、松手记为一步撤销，自定义色写回配置，下次截图沿用。',
     },
     {
       icon: 'keyboard',
-      title: 'F10 这类系统键能当热键了',
-      body: 'F10 是系统菜单键，Alt + 键也走 WM_SYSKEYDOWN，此前只处理 WM_KEYDOWN，把截图 / 贴图 / 长截图 / OCR 热键设成 F10 时在覆盖层里完全没反应。现在覆盖层新增 WM_SYSKEYDOWN 分支，只接管未按 Alt 的动作键，Alt+F4 / Alt+S 等组合仍透传给系统。',
+      title: '贴图可就地补标注',
+      body: '贴图窗口聚焦按空格或右键「编辑」，即复用截图工具栏就地补画——覆盖层只包住贴图 + 工具栏，不抓整屏、不暗化。完成（Enter / 空格 / 双击）把结果写回同一张贴图并复位缩放，取消 / 复制 / 保存则原样恢复；右键「保存」也改成原生另存为。',
     },
     {
-      icon: 'toggle',
-      title: '设置面板跟随系统换肤',
-      body: '选「跟随系统」却在切换系统深 / 浅色时面板不变。现在面板自己处理 WM_SETTINGCHANGE，并额外用 RegNotifyChangeKeyValue 监听注册表兜底（管理员进程可能被 UIPI 挡住用户级进程的主题广播），事件驱动、不做轮询，DWM 深色标题栏同步更新。',
+      icon: 'clipboard',
+      title: '截图终于能粘进飞书',
+      body: '剪贴板 CF_DIB 由自上而下（负 biHeight）改为自下而上（正 biHeight），写入时逐行反转像素并补全 biSizeImage，与 GDI 和主流截图工具的写法一致。飞书可以正常粘贴，微信不受影响。',
     },
     {
-      icon: 'update',
-      title: '托盘图标不再永久失踪',
-      body: '此前 NIM_ADD 失败后只重试 5 秒；实机里 explorer 曾比 AirSnip 晚启动 114 秒，窗口一过图标就永久缺失。重试窗口放宽到 3 分钟（36 次 × 5 秒），仍是失败才挂计时器、成功即撤销，不引入常驻轮询。',
+      icon: 'layout',
+      title: '设置面板不再被撑高',
+      body: '设置窗口恢复固定 720×520，不再被内容撑高；快捷键页改两列排布（12 项压成 6 行）。「恢复默认」改成右侧真按钮，清除图标只在悬停 / 捕获态显示，行悬停改为四周留白的圆角矩形。',
     },
     {
-      icon: 'ocr',
-      title: '功能名统一成「OCR」',
-      body: '设置面板页签「取字翻译」→「OCR 翻译」、气泡标题「AirSnip 取字」→「AirSnip OCR」、工具栏按钮悬浮提示补全，叫法全站统一。配置段与字段名本就是 ocr，老配置无需迁移。',
+      icon: 'mouse',
+      title: '右键不再直接退出截图',
+      body: 'Esc / 右键取消改为分层回退——先收面板，再处理文本输入，最后才退出；有未保存标注时先弹确认框，点「否」可继续。文本或序号输入中右键等于完成输入，文字保留。',
     },
   ],
 }
