@@ -94,7 +94,7 @@ https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-
 
 1. **下载包体积口径**：`v0.10.0` 的 `airsnip-v0.10.0-win-x64.zip` 实测为 842,706 字节（约 0.80 MiB / 0.84 MB 十进制），页面写的是「约 0.80 MB」，与 Release 说明一致。如需精确，改 `downloadInfo.packageSize`。
 2. **截图为 WebP**：作者提供的原图为 `.webp`（文档示例写的是 `.jpg`）。为避免引入图片处理依赖，站点直接引用 webp，未做转码；`og:image` 同样是 webp，个别社交平台预览支持有限，如需要可另出一张 png。
-3. **图片体积**：6 张截图当前均小于 400 KB（最大为 `hero.webp` 约 52 KB），暂不需要压缩。
+3. **图片体积**：7 张截图当前均小于 450 KB（最大为 `hero.webp` 约 417 KB），暂不需要压缩。
 4. **`about.webp` 中的赞助信息**：按文档要求原样展示，站点不新增任何赞助页或收款码。
 5. **已按作者指示偏离文档的 3 处**（仅记录，无需处理）：
    - 版本号取 `v0.8.1`（文档写的是 `v0.5.0`）。

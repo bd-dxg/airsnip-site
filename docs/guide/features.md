@@ -26,9 +26,9 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，左侧导航为通用、快捷键、保存、外观、关于" width="721" height="577" loading="lazy" decoding="async" />
+    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置，左侧导航为通用、快捷键、保存、外观、OCR 翻译、关于" width="721" height="553" loading="lazy" decoding="async" />
   </div>
-  <figcaption>设置面板「通用」页：开机自启、语言、贴图位置。</figcaption>
+  <figcaption>设置面板「通用」页：开机自启、连按两次退出、语言、贴图位置。</figcaption>
 </figure>
 
 ## 二次编辑 {#edit}
@@ -45,7 +45,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/save.webp" alt="AirSnip 设置窗口的「保存」页，三个文件名格式单选项" width="720" height="575" loading="lazy" decoding="async" />
+    <img src="/images/save.webp" alt="AirSnip 设置窗口的「保存」页，三个文件名格式单选项" width="722" height="552" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「保存」页：文件名格式三选一。</figcaption>
 </figure>
@@ -66,6 +66,13 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 - 识别走 Windows 自带的 `Windows.Media.Ocr`：图片不出本机，不需要 API key，不联网、不计费
 - **默认关闭**：设置 → 「OCR 翻译」里打开总开关后才生效，关闭时工具栏不出现 OCR 按钮、`T` 键不生效；识别语言默认跟随系统首选语言，也可以在设置里指定
 
+<figure class="as-shot">
+  <div class="as-window">
+    <img src="/images/ocr.webp" alt="AirSnip 设置窗口的「OCR 翻译」页，含 OCR 总开关、识别后自动复制、识别语言与本地识别说明" width="720" height="551" loading="lazy" decoding="async" />
+  </div>
+  <figcaption>设置面板「OCR 翻译」页：OCR 总开关、识别后自动复制、识别语言。</figcaption>
+</figure>
+
 ## 贴图（Pin） {#pin}
 
 - `F3` 把选区（含标注）钉在屏幕上
@@ -84,7 +91,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/appearance.webp" alt="AirSnip 设置窗口的「外观」页，三个主题单选项" width="718" height="578" loading="lazy" decoding="async" />
+    <img src="/images/appearance.webp" alt="AirSnip 设置窗口的「外观」页，三个主题单选项，以及界面缩放的自动、100%、125%、150%、175%、200% 六个档位" width="723" height="552" loading="lazy" decoding="async" />
   </div>
-  <figcaption>设置面板「外观」页：跟随系统 / 浅色 / 深色。</figcaption>
+  <figcaption>设置面板「外观」页：跟随系统 / 浅色 / 深色，以及界面缩放的自动、100%、125%、150%、175%、200%。</figcaption>
 </figure>

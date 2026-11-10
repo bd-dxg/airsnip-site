@@ -60,7 +60,7 @@ export interface ReleaseUpdate {
 }
 
 export interface Screenshot {
-  id: 'general' | 'shortcuts' | 'save' | 'appearance' | 'about'
+  id: 'general' | 'shortcuts' | 'save' | 'appearance' | 'ocr' | 'about'
   /** 标签页名 */
   title: string
   /** 只描述图中可见内容 */
@@ -299,21 +299,21 @@ export const screenshots: Screenshot[] = [
     id: 'general',
     title: '通用',
     caption:
-      '「通用」页：开机自启开关、语言（简体中文）、贴图位置（原位置 / 屏幕中间）三组设置。',
-    alt: 'AirSnip 设置窗口的「通用」页，左侧导航为通用、快捷键、保存、外观、关于',
+      '「通用」页：开机自启与连按两次退出两个开关，语言（简体中文），贴图位置（原位置 / 屏幕中间）二选一。',
+    alt: 'AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置，左侧导航为通用、快捷键、保存、外观、OCR 翻译、关于',
     src: '/images/general.webp',
     width: 721,
-    height: 577,
+    height: 553,
   },
   {
     id: 'shortcuts',
     title: '快捷键',
     caption:
-      '「快捷键」页：截图 F1、贴图 F3、贴图边框 Ctrl+F3、长截图 S，以及六个标注工具的按键，全部可改；底部提示无修饰键会覆盖其他程序按键。',
-    alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、贴图、长截图与各标注工具的按键',
+      '「快捷键」页：截图 F1、再次截图 Shift+F1、贴图 F3、贴图边框 Ctrl+F3、长截图 S、OCR C，以及十个标注工具的按键，全部可改；底部「恢复默认」一键还原，并提示无修饰键会覆盖其他程序按键。',
+    alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、再次截图、贴图、贴图边框、长截图、OCR 与十个标注工具的按键，底部有「恢复默认」按钮',
     src: '/images/shortcuts.webp',
-    width: 718,
-    height: 622,
+    width: 719,
+    height: 552,
   },
   {
     id: 'save',
@@ -321,34 +321,45 @@ export const screenshots: Screenshot[] = [
     caption: '「保存」页：文件名格式三选一——日期 + 时间、时间戳（毫秒）、仅日期。',
     alt: 'AirSnip 设置窗口的「保存」页，三个文件名格式单选项',
     src: '/images/save.webp',
-    width: 720,
-    height: 575,
+    width: 722,
+    height: 552,
   },
   {
     id: 'appearance',
     title: '外观',
-    caption: '「外观」页：跟随系统 / 浅色 / 深色三档，软件主题支持跟随系统切换。',
-    alt: 'AirSnip 设置窗口的「外观」页，三个主题单选项',
+    caption:
+      '「外观」页：跟随系统 / 浅色 / 深色三档，软件主题支持跟随系统切换；界面缩放另有自动 / 100% / 125% / 150% / 175% / 200% 六档。',
+    alt: 'AirSnip 设置窗口的「外观」页，三个主题单选项，以及界面缩放的自动、100%、125%、150%、175%、200% 六个档位',
     src: '/images/appearance.webp',
-    width: 718,
-    height: 578,
+    width: 723,
+    height: 552,
+  },
+  {
+    id: 'ocr',
+    title: 'OCR 翻译',
+    caption:
+      '「OCR 翻译」页：OCR 总开关、识别后自动复制、识别语言（跟随系统），说明写明本地识别、图片不出本机。',
+    alt: 'AirSnip 设置窗口的「OCR 翻译」页，含 OCR 总开关、识别后自动复制、识别语言与本地识别说明',
+    src: '/images/ocr.webp',
+    width: 720,
+    height: 551,
   },
   {
     id: 'about',
     title: '关于',
     caption:
-      '「关于」页：版本与许可、项目地址、第三方许可清单入口，以及作者的支持项目说明与赞赏二维码（原样展示）。',
-    alt: 'AirSnip 设置窗口的「关于」页，含版本号、GPL-3.0 许可、项目地址、第三方许可入口与支持项目二维码',
+      '「关于」页：版本与许可、项目地址、第三方许可清单入口、版本更新（含启动时自动检查开关，图中显示已是最新），以及作者的支持项目说明与赞赏二维码（原样展示）。',
+    alt: 'AirSnip 设置窗口的「关于」页，含版本号、GPL-3.0 许可、项目地址、第三方许可入口、版本更新与启动时自动检查开关，以及支持项目二维码',
     src: '/images/about.webp',
-    width: 721,
-    height: 578,
+    width: 723,
+    height: 552,
   },
 ]
 
 export const heroShot = {
   src: '/images/hero.webp',
-  width: 1335,
-  height: 728,
+  width: 1297,
+  height: 742,
   alt: '按 F1 后的截图覆盖层：背景整体压暗，选区框住网页内容并显示选区尺寸，屏幕底部一行标注工具栏',
   caption: '按 F1 后的样子：屏幕冻结、框选任意区域，底部一行就是全部标注工具。',
 }
