@@ -46,6 +46,7 @@ export interface ReleaseChange {
     | 'number'
     | 'palette'
     | 'clipboard'
+    | 'shapes'
     | 'layout'
   title: string
   body: string
@@ -79,7 +80,7 @@ export const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY.md`
 export const PERF_URL = `${REPO_URL}/blob/main/docs/perf-m5.md`
 
 // 由作者维护：改这里即可让下载地址与页面上显示的版本号同步更新
-export const VERSION = 'v0.9.0'
+export const VERSION = 'v0.10.0'
 
 /** 当前版本的 Release 页面，用于「完整更新日志」 */
 export const RELEASE_URL = `${RELEASES_URL}/tag/${VERSION}`
@@ -101,20 +102,20 @@ export const DESCRIPTION = '1 MB 的 Windows 截图标注工具（Rust，纯 CPU
 export const downloadInfo = {
   platform: 'Windows x64',
   portable: '绿色免安装',
-  packageSize: '0.79 MB',
+  packageSize: '0.80 MB',
   license: 'GPL-3.0-only',
 } as const
 
 export const stats: Stat[] = [
   {
     label: '单文件体积',
-    value: '1.43',
+    value: '1.44',
     unit: 'MB',
     note: '一个 exe 就是全部',
   },
   {
     label: '下载包',
-    value: '0.79',
+    value: '0.80',
     unit: 'MB',
     note: 'zip，含文档与许可证',
   },
@@ -151,37 +152,37 @@ export const statsFootnote =
 /** 首页「这次更新了什么」：只写当前版本 Release 说明里的事实 */
 export const releaseUpdate: ReleaseUpdate = {
   title: '这次更新了什么',
-  lead: '一句话：新增序号标记、自定义取色与贴图就地补标注，顺手修掉飞书粘贴、设置面板与右键误触三个毛病。',
+  lead: '一句话：新增直线 / 椭圆 / 手绘三个标注工具，5 个色块全部可自定义，取消改成连按两次，并修掉 HDR 桌面下长截图内存暴涨。',
   changes: [
     {
-      icon: 'number',
-      title: '新增「序号」标注',
-      body: '按下放圆形徽标、拖动引出箭头（Shift 吸附水平 / 垂直 / 45°）。编号自动取已有最大值 +1，删除 / 撤销不重排；双击徽标可直接改编号，颜色跟调色板、滚轮连续调大小，数字按底色自动取反色。工具栏新增「序号」按钮，工具切换键默认 7。',
+      icon: 'shapes',
+      title: '新增直线 / 椭圆 / 手绘',
+      body: '工具栏再加三个标注工具，默认键 8 / 9 / 0，可在设置里改并参与冲突检测。直线按住 Shift 吸附水平 / 垂直 / 45°，只有头尾两个端点手柄；椭圆按住 Shift 画正圆，与矩形共用填充开关；手绘按 2px 最小步距采样点列，渲染用「相邻点中点 + 二次贝塞尔」平滑，命中按折线距离判定。三者都进既有的矢量对象模型，选中 / 移动 / 八向缩放 / 方向键微调 / 撤销重做直接可用。',
     },
     {
       icon: 'palette',
-      title: '标注颜色能自己调了',
-      body: '工具栏颜色组在 5 个预设色块后多了一个自定义色块，点开是覆盖层内自绘的取色面板（色相条 + 饱和度 / 明度方块 + 2×6 快捷色），不再调用不适用的系统取色对话框。拖动实时预览选中对象、松手记为一步撤销，自定义色写回配置，下次截图沿用。',
-    },
-    {
-      icon: 'keyboard',
-      title: '贴图可就地补标注',
-      body: '贴图窗口聚焦按空格或右键「编辑」，即复用截图工具栏就地补画——覆盖层只包住贴图 + 工具栏，不抓整屏、不暗化。完成（Enter / 空格 / 双击）把结果写回同一张贴图并复位缩放，取消 / 复制 / 保存则原样恢复；右键「保存」也改成原生另存为。',
-    },
-    {
-      icon: 'clipboard',
-      title: '截图终于能粘进飞书',
-      body: '剪贴板 CF_DIB 由自上而下（负 biHeight）改为自下而上（正 biHeight），写入时逐行反转像素并补全 biSizeImage，与 GDI 和主流截图工具的写法一致。飞书可以正常粘贴，微信不受影响。',
-    },
-    {
-      icon: 'layout',
-      title: '设置面板不再被撑高',
-      body: '设置窗口恢复固定 720×520，不再被内容撑高；快捷键页改两列排布（12 项压成 6 行）。「恢复默认」改成右侧真按钮，清除图标只在悬停 / 捕获态显示，行悬停改为四周留白的圆角矩形。',
+      title: '5 个色块都能自己改',
+      body: '取消原来单独的「自定义色」格子，工具栏 5 个色块统一为单击使用、双击改色：双击展开覆盖层内自绘的取色面板，改的就是该色块本身。单击不用等「可能是双击」的计时器，所以没有选色延迟；悬停提示显示当前色值与操作方式。5 色随配置持久化，下次截图沿用。',
     },
     {
       icon: 'mouse',
-      title: '右键不再直接退出截图',
-      body: 'Esc / 右键取消改为分层回退——先收面板，再处理文本输入，最后才退出；有未保存标注时先弹确认框，点「否」可继续。文本或序号输入中右键等于完成输入，文字保留。',
+      title: '取消截图改成连按两次',
+      body: '有未保存标注时，第一次按 Esc / 右键只弹非模态提示，同一键在 2 秒内再按一次才退出，不再弹系统确认框；换键或先做别的操作会解除待命。设置「常规」页的开关文案改为「连按两次退出」，关掉后有标注也直接退出。',
+    },
+    {
+      icon: 'tooltip',
+      title: '提示不再盖住选区',
+      body: '小选区下的提示优先放在选区内部右上角；可用高度不到提示两倍或宽度塞不下时退到选区上方，上方也没空间才放下方，最后钳回屏幕内。提示 2 秒自动消失，末尾 0.5 秒渐隐。',
+    },
+    {
+      icon: 'hdr',
+      title: '修掉 HDR 下长截图内存暴涨',
+      body: 'HDR 桌面抓屏走 DXGI Desktop Duplication，原实现每抓一帧就重建一次 D3D11 设备与 duplication 会话，驱动在反复重建时会累积泄漏（长截图期间每 ~90ms 一帧，越滚占用越大）。现在整个长截图会话复用同一套设备，结束统一释放；遇到 DXGI_ERROR_ACCESS_LOST（切分辨率 / 全屏独占 / 锁屏）重建一次后继续。单次截图与贴图编辑仍是现建现用。',
+    },
+    {
+      icon: 'layout',
+      title: '界面细节跟上',
+      body: '系统对话框声明通用控件 v6，抓屏 / 保存失败的提示不再是 Win7 式经典外观。设置「快捷键」页键帽行 12 → 15 项（5 个热键 + 10 个工具），仍是两列、固定窗口高度内；工具栏第一行 19 → 22 个按钮，已补窄屏 / 高缩放下不越界的回归测试。',
     },
   ],
 }
