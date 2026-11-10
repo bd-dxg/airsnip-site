@@ -34,7 +34,7 @@ function onKeydown(event: KeyboardEvent, index: number): void {
   <section class="as-section" aria-labelledby="as-tour-title">
     <Reveal as="h2" id="as-tour-title" class="as-section__title">产品界面</Reveal>
     <Reveal as="p" class="as-section__lead" :delay="60">
-      软件设置是自绘面板，跟随系统深浅色；下面是六个设置页的实际样子。
+      软件设置是自绘面板，跟随系统深浅色；下面是各设置页的实际样子。
     </Reveal>
 
     <div class="as-tour">

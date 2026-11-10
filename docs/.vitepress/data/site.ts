@@ -335,8 +335,8 @@ export const screenshots: Screenshot[] = [
     id: 'shortcuts',
     title: '快捷键',
     caption:
-      '「快捷键」页：截图 F1、再次截图 Shift+F1、贴图 F3、贴图边框 Ctrl+F3、长截图 S、OCR C，以及十个标注工具的按键，全部可改；底部「恢复默认」一键还原，并提示无修饰键会覆盖其他程序按键。',
-    alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、再次截图、贴图、贴图边框、长截图、OCR 与十个标注工具的按键，底部有「恢复默认」按钮',
+      '「快捷键」页：截图 F1、再次截图 Shift+F1、贴图 F3、贴图边框 Ctrl+F3、长截图 S、OCR C，以及各标注工具的按键，全部可改；底部「恢复默认」一键还原，并提示无修饰键会覆盖其他程序按键。',
+    alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、再次截图、贴图、贴图边框、长截图、OCR 与各标注工具的按键，底部有「恢复默认」按钮',
     src: '/images/shortcuts.webp',
     width: 719,
     height: 552,

@@ -23,7 +23,7 @@ features:
     link: /guide/features#capture
     linkText: 了解详情
   - title: 标注
-    details: 矩形、箭头、文本、高斯模糊、荧光笔、聚光灯、序号、直线、椭圆、手绘十个工具，覆盖层里按 1–9、0 切换。
+    details: 矩形、箭头、文本、高斯模糊、荧光笔、聚光灯、序号、直线、椭圆、手绘，覆盖层里按数字键切换。
     link: /guide/features#annotate
     linkText: 了解详情
   - title: 二次编辑

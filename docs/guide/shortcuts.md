@@ -11,7 +11,7 @@ description: AirSnip 快捷键总表：覆盖层、贴图窗口与全局热键�
   <div class="as-window">
     <img src="/images/shortcuts.webp" alt="AirSnip 设置窗口的「快捷键」页，逐项列出截图、再次截图、贴图、贴图边框、长截图、OCR 与各标注工具的按键" width="719" height="552" loading="eager" decoding="async" />
   </div>
-  <figcaption>设置面板「快捷键」页：截图、再次截图、贴图、贴图边框、长截图、OCR 与十个标注工具的按键。</figcaption>
+  <figcaption>设置面板「快捷键」页：截图、再次截图、贴图、贴图边框、长截图、OCR 与各标注工具的按键。</figcaption>
 </figure>
 
 ## 覆盖层
