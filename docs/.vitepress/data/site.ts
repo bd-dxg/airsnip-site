@@ -218,6 +218,26 @@ export const tools: Tool[] = [
     name: '聚光灯',
     description: '选区内整体暗化、绘制区域恢复原亮，可叠加多块。',
   },
+  {
+    key: '7',
+    name: '序号',
+    description: '点一下落下一个编号并自动 +1，双击可改数字，后续序号从改后的值继续 +1。',
+  },
+  {
+    key: '8',
+    name: '直线',
+    description: '按住 Shift 吸附水平 / 垂直 / 45°，只有头尾两个端点手柄。',
+  },
+  {
+    key: '9',
+    name: '椭圆',
+    description: '按住 Shift 画正圆，与矩形共用填充开关。',
+  },
+  {
+    key: '0',
+    name: '手绘',
+    description: '按 2px 最小步距采样点列，二次贝塞尔平滑，命中按折线距离判定。',
+  },
 ]
 
 export const shortcuts: Shortcut[] = [
@@ -230,10 +250,11 @@ export const shortcuts: Shortcut[] = [
   { keys: ['Ctrl', 'S'], action: '另存为（PNG / JPEG / WebP）', scope: 'overlay' },
   { keys: ['F3'], action: '把选区贴到屏幕', scope: 'overlay' },
   { keys: ['S'], action: '长截图（当前选区为视口）', scope: 'overlay' },
-  { keys: ['T'], action: 'OCR 识别选区文字（需在设置里打开总开关）', scope: 'overlay' },
+  { keys: ['C'], action: 'OCR 识别选区文字（需在设置里打开总开关，默认键可改）', scope: 'overlay' },
   {
-    keys: ['1 – 6'],
-    action: '切换工具：矩形 / 箭头 / 文本 / 模糊 / 荧光笔 / 聚光灯（可改）',
+    keys: ['1 – 9', '0'],
+    action:
+      '切换工具：矩形 / 箭头 / 文本 / 模糊 / 荧光笔 / 聚光灯 / 序号 / 直线 / 椭圆 / 手绘（可改）',
     scope: 'overlay',
   },
   { keys: ['Ctrl', 'Z'], action: '撤销（Ctrl+Y 或 Ctrl+Shift+Z 重做）', scope: 'overlay' },
@@ -266,6 +287,11 @@ export const shortcuts: Shortcut[] = [
 
   // 全局热键
   { keys: ['F1'], action: '截图（默认值，可在设置修改）', scope: 'global' },
+  {
+    keys: ['Shift', 'F1'],
+    action: '再次截图（默认值）：不退出覆盖层，重新冻结屏幕再框选，上一次的覆盖层控件会一起被截入',
+    scope: 'global',
+  },
   { keys: ['F3'], action: '贴图（默认值，可在设置修改）', scope: 'global' },
 ]
 

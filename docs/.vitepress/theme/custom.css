@@ -801,6 +801,12 @@ button:focus-visible,
     gap: 20px;
   }
 
+  /* 十个工具在宽屏排成两行五列，不留孤卡 */
+  .as-tools {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+
   .as-audiences {
     grid-template-columns: repeat(4, 1fr);
   }

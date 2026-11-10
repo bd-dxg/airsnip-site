@@ -17,10 +17,10 @@ const props = withDefaults(
     :aria-labelledby="props.showHeading ? 'as-tools-title' : undefined"
   >
     <Reveal v-if="props.showHeading" as="h2" id="as-tools-title" class="as-section__title">
-      六个标注工具
+      十个标注工具
     </Reveal>
     <Reveal v-if="props.showHeading" as="p" class="as-section__lead" :delay="60">
-      覆盖层里按数字键即切换，按键可改；选中对象后可继续移动、缩放、改色。
+      覆盖层里按数字键 1–9、0 即切换，按键可改；选中对象后可继续移动、缩放、改色。
     </Reveal>
     <div class="as-tools">
       <Reveal
