@@ -29,7 +29,7 @@ pnpm exec tsc --noEmit # 类型检查（strict）
 第 1 步改完，用下面这条各验一次，**两个都返回 200 且 `Content-Length` 一致**才算对：
 
 ```powershell
-$asset = 'https://github.com/bd-dxg/airsnip/releases/download/v0.6.0/airsnip-v0.6.0-win-x64.zip'
+$asset = 'https://github.com/bd-dxg/airsnip/releases/download/v0.11.0/airsnip-v0.11.0-win-x64.zip'
 curl.exe -sIL -o NUL -w "%{http_code} %{size_download}`n" $asset
 curl.exe -sIL -o NUL -w "%{http_code} %{size_download}`n" "https://v4.gh-proxy.org/$asset"
 ```
@@ -39,10 +39,10 @@ curl.exe -sIL -o NUL -w "%{http_code} %{size_download}`n" "https://v4.gh-proxy.o
 国内加速走 `v4.gh-proxy.org`（和 danmu-site 同一个镜像），原始 GitHub 链接直接拼在域名后面：
 
 ```text
-https://v4.gh-proxy.org/https://github.com/bd-dxg/airsnip/releases/download/v0.6.0/airsnip-v0.6.0-win-x64.zip
+https://v4.gh-proxy.org/https://github.com/bd-dxg/airsnip/releases/download/v0.11.0/airsnip-v0.11.0-win-x64.zip
 ```
 
-注意这里的路径和文件名**都带 v**（`v0.6.0` / `airsnip-v0.6.0-win-x64.zip`），和 douyin-danmu 的 `0.2.1` 格式不一样，别照抄那边的。
+注意这里的路径和文件名**都带 v**（`v0.11.0` / `airsnip-v0.11.0-win-x64.zip`），和 douyin-danmu 的 `0.2.1` 格式不一样，别照抄那边的。
 
 `releases/latest` 只适合当「历史版本 / 所有版本」入口，不是直接下载——资产名里带版本号，`/releases/latest/download/<文件名>` 用不了。
 

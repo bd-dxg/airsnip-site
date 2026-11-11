@@ -39,6 +39,7 @@ export interface ReleaseChange {
     | 'mirror'
     | 'toggle'
     | 'size'
+    | 'trash'
     | 'ocr'
     | 'mouse'
     | 'tooltip'
@@ -60,7 +61,7 @@ export interface ReleaseUpdate {
 }
 
 export interface Screenshot {
-  id: 'general' | 'shortcuts' | 'save' | 'appearance' | 'ocr' | 'about'
+  id: 'general' | 'toolbar' | 'shortcuts' | 'save' | 'appearance' | 'ocr' | 'about'
   /** 标签页名 */
   title: string
   /** 只描述图中可见内容 */
@@ -80,7 +81,7 @@ export const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY.md`
 export const PERF_URL = `${REPO_URL}/blob/main/docs/perf-m5.md`
 
 // 由作者维护：改这里即可让下载地址与页面上显示的版本号同步更新
-export const VERSION = 'v0.10.0'
+export const VERSION = 'v0.11.0'
 
 /** 当前版本的 Release 页面，用于「完整更新日志」 */
 export const RELEASE_URL = `${RELEASES_URL}/tag/${VERSION}`
@@ -102,20 +103,20 @@ export const DESCRIPTION = '1 MB 的 Windows 截图标注工具（Rust，纯 CPU
 export const downloadInfo = {
   platform: 'Windows x64',
   portable: '绿色免安装',
-  packageSize: '0.80 MB',
+  packageSize: '0.81 MB',
   license: 'GPL-3.0-only',
 } as const
 
 export const stats: Stat[] = [
   {
     label: '单文件体积',
-    value: '1.44',
+    value: '1.46',
     unit: 'MB',
     note: '一个 exe 就是全部',
   },
   {
     label: '下载包',
-    value: '0.80',
+    value: '0.81',
     unit: 'MB',
     note: 'zip，含文档与许可证',
   },
@@ -152,37 +153,27 @@ export const statsFootnote =
 /** 首页「这次更新了什么」：只写当前版本 Release 说明里的事实 */
 export const releaseUpdate: ReleaseUpdate = {
   title: '这次更新了什么',
-  lead: '一句话：新增直线 / 椭圆 / 手绘三个标注工具，5 个色块全部可自定义，取消改成连按两次，并修掉 HDR 桌面下长截图内存暴涨。',
+  lead: '一句话：截图工具栏的元素可以逐个隐藏，只留自己常用的那几个按钮；选中的标注能单独删除；OCR 不用再先去设置里开总开关。',
   changes: [
     {
-      icon: 'shapes',
-      title: '新增直线 / 椭圆 / 手绘',
-      body: '工具栏再加三个标注工具，默认键 8 / 9 / 0，可在设置里改并参与冲突检测。直线按住 Shift 吸附水平 / 垂直 / 45°，只有头尾两个端点手柄；椭圆按住 Shift 画正圆，与矩形共用填充开关；手绘按 2px 最小步距采样点列，渲染用「相邻点中点 + 二次贝塞尔」平滑，命中按折线距离判定。三者都进既有的矢量对象模型，选中 / 移动 / 八向缩放 / 方向键微调 / 撤销重做直接可用。',
+      icon: 'layout',
+      title: '工具栏元素可逐个隐藏',
+      body: '设置面板新增「工具栏」页（导航 6 → 7 项），24 个元素逐项开关：10 个工具、5 个色块、填充 / 撤销 / 重做 / 字体行、贴图 / 长截图 / OCR、复制 / 保存；组头可整组全显或全隐，部分可见时勾选框显示半选。隐藏只是不画：快捷键、输出行为、配置一律照旧——藏了保存按钮 Ctrl+S 照样能存，藏了椭圆的数字键 9 照样能切过去。默认全部可见，不动设置的话工具栏与原来完全一致。',
     },
     {
-      icon: 'palette',
-      title: '5 个色块都能自己改',
-      body: '取消原来单独的「自定义色」格子，工具栏 5 个色块统一为单击使用、双击改色：双击展开覆盖层内自绘的取色面板，改的就是该色块本身。单击不用等「可能是双击」的计时器，所以没有选色延迟；悬停提示显示当前色值与操作方式。5 色随配置持久化，下次截图沿用。',
+      icon: 'trash',
+      title: '选中的标注可以单独删除',
+      body: '选中对象后按 Del / Backspace 只删这一个，Ctrl+Z 一步恢复，不用再撤回到它之前、把后面画的全部重画。入口只有键盘：不加工具栏按钮，也不加包围框上的 ✕；没选中对象时不吞按键，照旧用于工具切换。',
+    },
+    {
+      icon: 'ocr',
+      title: 'OCR 不再要总开关',
+      body: 'OCR 常开，设置「OCR 翻译」页删掉了「启用 OCR」，工具栏上的 OCR 按钮默认出现；首次识别才初始化识别引擎，待机开销不变。不想看到按钮就在「工具栏」页隐藏它——隐藏不影响 T 键；彻底不用 OCR，到快捷键页把 OCR 键清空为「未设置」即可。',
     },
     {
       icon: 'mouse',
-      title: '取消截图改成连按两次',
-      body: '有未保存标注时，第一次按 Esc / 右键只弹非模态提示，同一键在 2 秒内再按一次才退出，不再弹系统确认框；换键或先做别的操作会解除待命。设置「常规」页的开关文案改为「连按两次退出」，关掉后有标注也直接退出。',
-    },
-    {
-      icon: 'tooltip',
-      title: '提示不再盖住选区',
-      body: '小选区下的提示优先放在选区内部右上角；可用高度不到提示两倍或宽度塞不下时退到选区上方，上方也没空间才放下方，最后钳回屏幕内。提示 2 秒自动消失，末尾 0.5 秒渐隐。',
-    },
-    {
-      icon: 'hdr',
-      title: '修掉 HDR 下长截图内存暴涨',
-      body: 'HDR 桌面抓屏走 DXGI Desktop Duplication，原实现每抓一帧就重建一次 D3D11 设备与 duplication 会话，驱动在反复重建时会累积泄漏（长截图期间每 ~90ms 一帧，越滚占用越大）。现在整个长截图会话复用同一套设备，结束统一释放；遇到 DXGI_ERROR_ACCESS_LOST（切分辨率 / 全屏独占 / 锁屏）重建一次后继续。单次截图与贴图编辑仍是现建现用。',
-    },
-    {
-      icon: 'layout',
-      title: '界面细节跟上',
-      body: '系统对话框声明通用控件 v6，抓屏 / 保存失败的提示不再是 Win7 式经典外观。设置「快捷键」页键帽行 12 → 15 项（5 个热键 + 10 个工具），仍是两列、固定窗口高度内；工具栏第一行 19 → 22 个按钮，已补窄屏 / 高缩放下不越界的回归测试。',
+      title: '「恢复默认」不再误触',
+      body: '按钮命中测试原先按整行矩形判定，而行宽约 570px、按钮只有约 120px 且右对齐，点按钮左侧的空白也会触发恢复默认，视觉与实际可点区域正好相反。同一处缺陷一并修好「关于」页的「版本更新」按钮；顺带把分散在 6 处的快捷键元数据收敛成一张表，新增键帽行不再要手改多个地方。',
     },
   ],
 }
@@ -250,7 +241,7 @@ export const shortcuts: Shortcut[] = [
   { keys: ['Ctrl', 'S'], action: '另存为（PNG / JPEG / WebP）', scope: 'overlay' },
   { keys: ['F3'], action: '把选区贴到屏幕', scope: 'overlay' },
   { keys: ['S'], action: '长截图（当前选区为视口）', scope: 'overlay' },
-  { keys: ['C'], action: 'OCR 识别选区文字（需在设置里打开总开关，默认键可改）', scope: 'overlay' },
+  { keys: ['T'], action: 'OCR 识别选区文字（默认键，可改；工具栏按钮藏起来也照旧可用）', scope: 'overlay' },
   {
     keys: ['1 – 9', '0'],
     action:
@@ -258,6 +249,11 @@ export const shortcuts: Shortcut[] = [
     scope: 'overlay',
   },
   { keys: ['Ctrl', 'Z'], action: '撤销（Ctrl+Y 或 Ctrl+Shift+Z 重做）', scope: 'overlay' },
+  {
+    keys: ['Del', 'Backspace'],
+    action: '删除选中的那个标注，Ctrl+Z 一步恢复；没选中对象时不吞按键',
+    scope: 'overlay',
+  },
   {
     keys: ['方向键'],
     action: '微调选中对象；无选中时移动选区框（按住 Shift 每次 5px）',
@@ -326,10 +322,20 @@ export const screenshots: Screenshot[] = [
     title: '通用',
     caption:
       '「通用」页：开机自启与连按两次退出两个开关，语言（简体中文），贴图位置（原位置 / 屏幕中间）二选一。',
-    alt: 'AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置，左侧导航为通用、快捷键、保存、外观、OCR 翻译、关于',
+    alt: 'AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置',
     src: '/images/general.webp',
+    width: 718,
+    height: 549,
+  },
+  {
+    id: 'toolbar',
+    title: '工具栏',
+    caption:
+      '「工具栏」页：24 个工具栏元素逐项显隐——10 个工具、5 个色块、填充 / 撤销 / 重做 / 字体行、贴图 / 长截图 / OCR、复制 / 保存；组头可整组全显或全隐。页脚提示：全隐藏后 Enter 仍复制、Ctrl+S 仍保存。',
+    alt: 'AirSnip 设置窗口的「工具栏」页，24 个工具栏元素分成五组逐项开关，页脚提示隐藏后 Enter 仍复制、Ctrl+S 仍保存',
+    src: '/images/toolbar.webp',
     width: 721,
-    height: 553,
+    height: 552,
   },
   {
     id: 'shortcuts',
@@ -338,8 +344,8 @@ export const screenshots: Screenshot[] = [
       '「快捷键」页：截图 F1、再次截图 Shift+F1、贴图 F3、贴图边框 Ctrl+F3、长截图 S、OCR C，以及各标注工具的按键，全部可改；底部「恢复默认」一键还原，并提示无修饰键会覆盖其他程序按键。',
     alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、再次截图、贴图、贴图边框、长截图、OCR 与各标注工具的按键，底部有「恢复默认」按钮',
     src: '/images/shortcuts.webp',
-    width: 719,
-    height: 552,
+    width: 721,
+    height: 549,
   },
   {
     id: 'save',
@@ -347,8 +353,8 @@ export const screenshots: Screenshot[] = [
     caption: '「保存」页：文件名格式三选一——日期 + 时间、时间戳（毫秒）、仅日期。',
     alt: 'AirSnip 设置窗口的「保存」页，三个文件名格式单选项',
     src: '/images/save.webp',
-    width: 722,
-    height: 552,
+    width: 717,
+    height: 547,
   },
   {
     id: 'appearance',
@@ -357,18 +363,18 @@ export const screenshots: Screenshot[] = [
       '「外观」页：跟随系统 / 浅色 / 深色三档，软件主题支持跟随系统切换；界面缩放另有自动 / 100% / 125% / 150% / 175% / 200% 六档。',
     alt: 'AirSnip 设置窗口的「外观」页，三个主题单选项，以及界面缩放的自动、100%、125%、150%、175%、200% 六个档位',
     src: '/images/appearance.webp',
-    width: 723,
-    height: 552,
+    width: 718,
+    height: 548,
   },
   {
     id: 'ocr',
     title: 'OCR 翻译',
     caption:
-      '「OCR 翻译」页：OCR 总开关、识别后自动复制、识别语言（跟随系统），说明写明本地识别、图片不出本机。',
-    alt: 'AirSnip 设置窗口的「OCR 翻译」页，含 OCR 总开关、识别后自动复制、识别语言与本地识别说明',
+      '「OCR 翻译」页：识别后自动复制、识别语言（跟随系统），说明写明本地识别、图片不出本机。',
+    alt: 'AirSnip 设置窗口的「OCR 翻译」页，含识别后自动复制、识别语言与本地识别说明',
     src: '/images/ocr.webp',
-    width: 720,
-    height: 551,
+    width: 721,
+    height: 554,
   },
   {
     id: 'about',
@@ -377,8 +383,8 @@ export const screenshots: Screenshot[] = [
       '「关于」页：版本与许可、项目地址、第三方许可清单入口、版本更新（含启动时自动检查开关，图中显示已是最新），以及作者的支持项目说明与赞赏二维码（原样展示）。',
     alt: 'AirSnip 设置窗口的「关于」页，含版本号、GPL-3.0 许可、项目地址、第三方许可入口、版本更新与启动时自动检查开关，以及支持项目二维码',
     src: '/images/about.webp',
-    width: 723,
-    height: 552,
+    width: 715,
+    height: 546,
   },
 ]
 

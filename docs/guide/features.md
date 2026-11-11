@@ -27,7 +27,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置，左侧导航为通用、快捷键、保存、外观、OCR 翻译、关于" width="721" height="553" loading="lazy" decoding="async" />
+    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置" width="718" height="549" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「通用」页：开机自启、连按两次退出、语言、贴图位置。</figcaption>
 </figure>
@@ -35,6 +35,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 ## 二次编辑 {#edit}
 
 - 选中对象显示包围框 + 八向手柄：拖动移动、拖角缩放（`Shift` 等比）
+- 选中后按 `Del` / `Backspace` 只删这一个标注，`Ctrl+Z` 一步恢复，不连带撤销其它标注
 - 颜色与填充实时作用于选中对象；线宽 / 模糊强度 / 字号用滚轮调
 - 撤销 / 重做 100 步，一次拖拽 = 一步
 
@@ -46,7 +47,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/save.webp" alt="AirSnip 设置窗口的「保存」页，三个文件名格式单选项" width="722" height="552" loading="lazy" decoding="async" />
+    <img src="/images/save.webp" alt="AirSnip 设置窗口的「保存」页，三个文件名格式单选项" width="717" height="547" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「保存」页：文件名格式三选一。</figcaption>
 </figure>
@@ -60,18 +61,19 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 ## OCR 文字识别 {#ocr}
 
-- `F1` 框选后按 `C`（默认键，可改；或点工具栏「OCR」按钮）：覆盖层立即关闭，弹出文字卡片
+- `F1` 框选后按 `T`（默认键，可改；或点工具栏「OCR」按钮）：覆盖层立即关闭，弹出文字卡片
 - 卡片里的文字可以直接改错字、拖选、`Ctrl+A/C/V/X/Z`、右键菜单，输入法候选框跟随光标
 - 左下「复制」一键写剪贴板，右下「自动复制」开关默认关闭；顶部图钉把卡片置顶，方便对照粘贴
 - 卡片不自动关闭，`Esc` 或右上角 ✕ 关闭
 - 识别走 Windows 自带的 `Windows.Media.Ocr`：图片不出本机，不需要 API key，不联网、不计费
-- **默认关闭**：设置 → 「OCR 翻译」里打开总开关后才生效，关闭时工具栏不出现 OCR 按钮、`C` 键不生效；识别语言默认跟随系统首选语言，也可以在设置里指定；同一页的「识别后自动复制」可以让识别结果直接写进剪贴板
+- **不用先去开开关**：OCR 常开，工具栏的 OCR 按钮默认就在；首次识别才初始化引擎，不识别时不占资源。识别语言默认跟随系统首选语言，也可以在设置里指定；同一页的「识别后自动复制」可以让识别结果直接写进剪贴板
+- 不想看到 OCR 按钮就在设置 → 「工具栏」里隐藏它，隐藏后 `T` 仍可用；彻底不用 OCR，到「快捷键」页把 OCR 键清空为「未设置」
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/ocr.webp" alt="AirSnip 设置窗口的「OCR 翻译」页，含 OCR 总开关、识别后自动复制、识别语言与本地识别说明" width="720" height="551" loading="lazy" decoding="async" />
+    <img src="/images/ocr.webp" alt="AirSnip 设置窗口的「OCR 翻译」页，含识别后自动复制、识别语言与本地识别说明" width="721" height="554" loading="lazy" decoding="async" />
   </div>
-  <figcaption>设置面板「OCR 翻译」页：OCR 总开关、识别后自动复制、识别语言。</figcaption>
+  <figcaption>设置面板「OCR 翻译」页：识别后自动复制、识别语言。</figcaption>
 </figure>
 
 ## 贴图（Pin） {#pin}
@@ -84,15 +86,22 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 - 自绘面板，跟随系统深浅色
 - 「外观」设置：调整软件主题，支持跟随系统切换、自适应；界面缩放可选自动或 100%–200% 固定档位，作用于全部界面（设置面板、覆盖层工具栏、贴图窗口）
+- 「工具栏」页：24 个元素逐项显隐（10 个工具 / 5 个色块 / 填充·撤销·重做·字体行 / 贴图·长截图·OCR / 复制·保存），组头可整组全显或全隐；隐藏只影响绘制，快捷键与输出照旧——藏了保存按钮，`Ctrl+S` 照样能存
 - 开机自启、「连按两次退出」、全部快捷键可改（含冲突检测与输入法兼容）；每一项都能清空为「未设置」，底部「恢复默认」一键还原全部快捷键
 - 贴图默认位置、文件名模板、主题
 - 自动更新：启动后静默检查新版本，发现后弹托盘气泡；可以在「关于」→ 版本更新里关掉「启动时自动检查」，也可以在那里手动更新
-- OCR：设置 → 「OCR 翻译」里的总开关，默认关闭；打开后工具栏出现 OCR 按钮，覆盖层里 `C` 键生效
 - 「关于」页：版本、许可、第三方组件清单、项目地址
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/appearance.webp" alt="AirSnip 设置窗口的「外观」页，三个主题单选项，以及界面缩放的自动、100%、125%、150%、175%、200% 六个档位" width="723" height="552" loading="lazy" decoding="async" />
+    <img src="/images/toolbar.webp" alt="AirSnip 设置窗口的「工具栏」页，24 个工具栏元素分成五组逐项开关，页脚提示隐藏后 Enter 仍复制、Ctrl+S 仍保存" width="721" height="552" loading="lazy" decoding="async" />
+  </div>
+  <figcaption>设置面板「工具栏」页：24 个元素逐项显隐，组头可整组全显或全隐。</figcaption>
+</figure>
+
+<figure class="as-shot">
+  <div class="as-window">
+    <img src="/images/appearance.webp" alt="AirSnip 设置窗口的「外观」页，三个主题单选项，以及界面缩放的自动、100%、125%、150%、175%、200% 六个档位" width="718" height="548" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「外观」页：跟随系统 / 浅色 / 深色，以及界面缩放的自动、100%、125%、150%、175%、200%。</figcaption>
 </figure>

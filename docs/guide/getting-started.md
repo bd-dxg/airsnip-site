@@ -9,7 +9,7 @@ AirSnip 是绿色单文件，解压即用，不写注册表。下面是完整启
 
 ## 1. 下载并解压
 
-点击下载按钮获取 zip（约 0.80 MB，含文档与许可证），解压到任意目录。
+点击下载按钮获取 zip（约 0.81 MB，含文档与许可证），解压到任意目录。
 
 <DownloadCard />
 
@@ -31,7 +31,7 @@ AirSnip 是绿色单文件，解压即用，不写注册表。下面是完整启
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置，左侧导航为通用、快捷键、保存、外观、OCR 翻译、关于" width="721" height="553" loading="lazy" decoding="async" />
+    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置" width="718" height="549" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「通用」页：开机自启、语言、贴图位置。</figcaption>
 </figure>
