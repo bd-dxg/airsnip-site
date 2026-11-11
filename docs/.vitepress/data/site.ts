@@ -345,7 +345,7 @@ export const screenshots: Screenshot[] = [
     alt: 'AirSnip 设置窗口的「快捷键」页，逐项列出截图、再次截图、贴图、贴图边框、长截图、OCR 与各标注工具的按键，底部有「恢复默认」按钮',
     src: '/images/shortcuts.webp',
     width: 721,
-    height: 549,
+    height: 550,
   },
   {
     id: 'save',
