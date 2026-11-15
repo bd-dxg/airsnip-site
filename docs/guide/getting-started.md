@@ -31,9 +31,9 @@ AirSnip 是绿色单文件，解压即用，不写注册表。下面是完整启
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次退出、语言与贴图位置" width="718" height="549" loading="lazy" decoding="async" />
+    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次 Esc / 右键退出、语言、贴图位置、双击选区空白、窗口吸附与控件级捕捉" width="722" height="552" loading="lazy" decoding="async" />
   </div>
-  <figcaption>设置面板「通用」页：开机自启、语言、贴图位置。</figcaption>
+  <figcaption>设置面板「通用」页：开机自启、语言、贴图位置、双击动作，以及窗口吸附与控件级捕捉。</figcaption>
 </figure>
 
 ## 5. 配置文件
