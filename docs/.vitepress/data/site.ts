@@ -125,9 +125,9 @@ export const stats: Stat[] = [
   },
   {
     label: '待机内存',
-    value: '1.2',
+    value: '3.8',
     unit: 'MB',
-    note: '常驻托盘时 Private Working Set；任务管理器显示约 5–10 MB，差值来自共享页',
+    note: '截图一次后的 Private Working Set，冷启动 2.3 MB',
   },
   {
     label: '待机 CPU',
