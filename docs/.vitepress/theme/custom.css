@@ -316,14 +316,6 @@ button:focus-visible,
   letter-spacing: -0.02em;
 }
 
-.as-release__lead {
-  max-width: 640px;
-  margin: 12px auto 0;
-  font-size: 16px;
-  line-height: 1.8;
-  color: var(--vp-c-text-2);
-}
-
 .as-release__grid {
   display: grid;
   grid-template-columns: 1fr;

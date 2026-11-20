@@ -23,7 +23,7 @@ features:
     link: /guide/features#capture
     linkText: 了解详情
   - title: 标注
-    details: 矩形、箭头、文本、高斯模糊、荧光笔、聚光灯、序号、直线、椭圆、手绘；描边可换渐变与虚线 / 点划线；框选完默认是移动态，选工具或按数字键才进绘制。
+    details: 矩形、箭头、文本、高斯模糊、荧光笔、聚光灯、序号、直线、椭圆、手绘；描边可换渐变与虚线 / 点划线；序号可换成对勾 / 叉号徽标；框选完默认是移动态，选工具或按数字键才进绘制。
     link: /guide/features#annotate
     linkText: 了解详情
   - title: 二次编辑
@@ -31,7 +31,7 @@ features:
     link: /guide/features#edit
     linkText: 了解详情
   - title: 长截图
-    details: 以当前选区为视口，自己滚动页面，Enter 收尾，自动识别固定页眉页脚不重复。
+    details: 以当前选区为视口，自己滚动页面，Enter 收尾；页面里有轮播图、GIF 头像这类局部动画也能拼，快滚接得上，固定页眉页脚与粘滞侧栏不重复。
     link: /guide/features#longshot
     linkText: 了解详情
   - title: 贴图

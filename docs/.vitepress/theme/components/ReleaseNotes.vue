@@ -46,7 +46,6 @@ const icons: Record<ReleaseChange['icon'], string> = {
         最新 <strong>{{ VERSION }}</strong>
       </span>
       <h2 id="as-release-title" class="as-section__title">{{ releaseUpdate.title }}</h2>
-      <p class="as-release__lead">{{ releaseUpdate.lead }}</p>
     </Reveal>
 
     <div class="as-release__grid" :data-count="releaseUpdate.changes.length">
