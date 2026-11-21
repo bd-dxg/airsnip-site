@@ -861,13 +861,8 @@ button:focus-visible,
     0 16px 40px -20px rgba(15, 23, 42, 0.35);
 }
 
-/* 覆盖层会把屏幕整体压暗，两种主题一致（--as-demo-dimmer 来自 site.ts） */
-.as-demo__doc::after {
-  position: absolute;
-  inset: 0;
-  content: '';
-  background-color: var(--as-demo-dimmer, rgba(15, 23, 42, 0.32));
-}
+/* 覆盖层会把屏幕整体压暗：压暗由 SVG 里的 .as-demo__dim 完成（聚光灯要在它上面抠洞），
+   颜色仍来自 site.ts 的 --as-demo-dimmer / demo.glow.dimmer */
 
 .as-demo__doc-title {
   margin: 0;
@@ -918,7 +913,7 @@ button:focus-visible,
   color: #dc2626;
 }
 
-/* 标注层：铺满舞台，只有手柄与对象本体接收指针事件 */
+/* 标注层：铺满舞台，指针事件统一由舞台自己算，子元素不单独接收 */
 .as-demo__ink {
   position: absolute;
   inset: 0;
@@ -927,18 +922,37 @@ button:focus-visible,
   pointer-events: none;
 }
 
-/* 透明命中区：让矩形内部也能拖动移动，cursor 也跟着变 */
-.as-demo__hit {
-  pointer-events: all;
-  cursor: grab;
-}
-
-.as-demo__stage.is-dragging .as-demo__hit {
-  cursor: grabbing;
-}
-
-.as-demo__object {
+/* 压暗层在标注之下，标注本身不被压暗 */
+.as-demo__dim {
   pointer-events: none;
+}
+
+/* 模糊层：backdrop-filter 糊的是真实底图，元素尺寸就是模糊区域（clip-path 与 backdrop-filter 同用时不可靠） */
+.as-demo__blur {
+  position: absolute;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(var(--as-demo-blur, 12px));
+  backdrop-filter: blur(var(--as-demo-blur, 12px));
+}
+
+.as-demo__object,
+.as-demo__text,
+.as-demo__badge-text {
+  pointer-events: none;
+}
+
+.as-demo__text {
+  font-family: var(--vp-font-family-base);
+  white-space: pre;
+}
+
+/* 编辑中的文字先藏起来，免得输入框和画布上的字重影 */
+.as-demo__text.is-editing {
+  opacity: 0;
+}
+
+.as-demo__badge-text {
+  font-family: var(--vp-font-family-base);
 }
 
 /* 自动演示期间才给矩形加过渡；平时拖拽必须是即时的。
@@ -968,6 +982,87 @@ button:focus-visible,
 
 .as-demo__grip:focus-visible {
   outline: none;
+}
+
+/* 箭头曲线控制点：与圆角柄同尺寸，里面是实心小点 */
+.as-demo__control {
+  pointer-events: auto;
+}
+
+/* 序号徽标的 ▾：软件里在格子右下角，这里贴徽标右下角出现 */
+.as-demo__badge-toggle {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--as-demo-icon, rgba(255, 255, 255, 0.922));
+  background-color: var(--as-demo-bg, rgba(32, 32, 32, 0.941));
+  border: 1px solid var(--as-demo-border, rgba(255, 255, 255, 0.235));
+  border-radius: 5px;
+  transform: translate(-2px, -2px);
+  cursor: pointer;
+}
+
+.as-demo__badge-menu {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  min-width: 64px;
+  padding: 4px;
+  background-color: var(--as-demo-bg, rgba(32, 32, 32, 0.941));
+  border: 1px solid var(--as-demo-border, rgba(255, 255, 255, 0.235));
+  border-radius: 6px;
+  box-shadow: var(--as-demo-shadow, 0 16px 40px -16px rgba(0, 0, 0, 0.55));
+}
+
+.as-demo__badge-menu button {
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--as-demo-icon, rgba(255, 255, 255, 0.922));
+  text-align: left;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.as-demo__badge-menu button:hover {
+  background-color: var(--as-demo-row-hover, rgba(255, 255, 255, 0.071));
+}
+
+/* 文本就地编辑：位置与字号跟 SVG 里的文字对齐，看起来像直接改画布上的字 */
+.as-demo__editor {
+  position: absolute;
+  z-index: 3;
+}
+
+.as-demo__editor input {
+  width: 100%;
+  padding: 0 2px;
+  font: inherit;
+  line-height: 1.25;
+  color: inherit;
+  background-color: rgba(255, 255, 255, 0.82);
+  border: none;
+  border-radius: 3px;
+  outline: 2px solid var(--as-demo-accent, #1a73e8);
+  outline-offset: 1px;
+}
+
+.as-demo__doc-link {
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+
+.as-demo__doc-link:hover {
+  text-decoration: underline;
 }
 
 /* 指向圆角柄的脉冲圈：播三次就停，用户一动手就收 */

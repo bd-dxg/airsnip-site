@@ -429,7 +429,12 @@ export const heroShot = {
  * - 滚轮步进与范围：src/overlay/wheel.rs
  * - 选中框、手柄、强调色：src/overlay/objedit/frame.rs
  * - 圆角控制柄：src/overlay/objedit/mod.rs（`RADIUS_GRIP_BASE` / `ARC_TO_CORNER`）
- * - 默认颜色：src/editor/palette.rs；默认线宽：src/editor/tool.rs
+ * - 默认颜色：src/editor/palette.rs；默认线宽 / 字号：src/editor/tool.rs
+ * - 箭头头部与曲线控制点：src/render/mod.rs、src/editor/mod.rs
+ * - 荧光笔透明度、模糊强度：src/render/region.rs
+ * - 序号徽标半径与符号：src/render/badge.rs、src/editor/number.rs
+ * - 误触判据与手绘采样步距：src/overlay/pick/mod.rs、src/overlay/interaction/draft.rs
+ * - Shift 约束：src/editor/transform.rs
  */
 export const demo = {
   /**
@@ -492,9 +497,78 @@ export const demo = {
     /** 滚轮一格 1px，按住 Ctrl 三倍 */
     wheelStep: 1,
     ctrlStep: 3,
-    /** 命中判定放宽量：指针离矩形多远内算「悬停在这个对象上」 */
+    /** 命中判定放宽量：指针离对象多远内算「悬停在这个对象上」 */
     hitSlop: 8,
   },
+
+  /** 箭头头部：长度 max(线宽 × 4, 10)，半宽 = 长度 × 0.45（render/mod.rs 的 draw_arrow） */
+  arrow: { headScale: 4, headMin: 10, headHalf: 0.45 },
+
+  /** 模糊强度范围：clamp(4, 64)，默认 16（wheel.rs / tool.rs） */
+  blur: { default: 16, min: 4, max: 64 },
+
+  /** 文字与徽标字号范围（tool.rs 的 FONT_SIZE_RANGE） */
+  fontSize: { min: 10, max: 96 },
+
+  /** 文本默认字号（tool.rs 的 DEFAULT_FONT_SIZE） */
+  text: { defaultSize: 24 },
+
+  /**
+   * 序号徽标（render/badge.rs / editor/number.rs）：
+   * 半径 = max(内容宽 / 2 + 字号 × 0.35, 字号 × 0.8)；
+   * 对勾 / 叉号按「与单个数字等宽」估（0.6 × 字号），符号不占编号。
+   */
+  number: {
+    defaultFontSize: 20,
+    radiusK: 0.35,
+    minRadiusK: 0.8,
+    markStrokeK: 0.3,
+    /** 比例坐标相对徽标半径（MARK_CHECK / MARK_CROSS） */
+    check: [
+      [-0.42, 0.02],
+      [-0.12, 0.34],
+      [0.44, -0.34],
+    ],
+    cross: [
+      [
+        [-0.34, -0.34],
+        [0.34, 0.34],
+      ],
+      [
+        [-0.34, 0.34],
+        [0.34, -0.34],
+      ],
+    ],
+  },
+
+  /** 荧光笔：alpha 150/255 + 正片叠底（render/region.rs 的 HIGHLIGHT_ALPHA） */
+  highlight: { alpha: 150, alphaMax: 255 },
+
+  /**
+   * 聚光灯：画了它才把覆盖层按软件的压暗程度叠上去（区域用 SVG mask 抠亮）。
+   * 平时只留 `dimmer` 的 0.08，保住浅色版式；纯聚光灯在 0.08 上看不出效果。
+   */
+  glow: { dimmer: 'rgba(15, 23, 42, 0.45)' },
+
+  /** 手绘采样最小间距（物理像素，draft.rs 的 FREEHAND_MIN_STEP） */
+  freehand: { minStep: 2 },
+
+  /** 误触判据：两轴位移都小于 2px 就丢弃（pick/mod.rs 的 is_degenerate） */
+  degenerate: 2,
+
+  /** 每个工具一句提示（≤20 字），展示在演示台下方 */
+  toolHints: {
+    rect: '拖出方框，拖内侧圆点改圆角',
+    arrow: '拖出箭头，拖虚线控制点弯成曲线',
+    text: '点一下打字，双击再改',
+    blur: '框住敏感信息，滚轮调模糊强度',
+    highlight: '半透明正片叠底，不遮住文字',
+    glow: '只留选区内是亮的，可叠多块',
+    number: '点一下自动编号，▾ 换成勾或叉',
+    line: 'Shift 吸附水平 / 垂直 / 45°',
+    ellipse: 'Shift 画正圆，可填充',
+    freehand: '按住随手画，按 2px 采样平滑',
+  } as Record<string, string>,
 
   /** 选中框与手柄（frame.rs） */
   frame: { accent: '#1a73e8', handle: 7, round: 3.5, lineWidth: 1 },
