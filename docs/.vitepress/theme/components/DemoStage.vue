@@ -158,8 +158,6 @@ const defaults = reactive({
   numberSize: demo.number.defaultFontSize,
 })
 
-/** 徽标当前形态：点一下落下的就是这个形态（数字 → 自动编号） */
-const mark = ref<BadgeMark>('num')
 /** 矩形 / 椭圆的填充开关（软件里就是工具栏那个「填充」） */
 const filled = ref(false)
 
@@ -212,20 +210,23 @@ function squareCorner(origin: Point, point: Point): Point {
   return { x: origin.x + side * Math.sign(dx), y: origin.y + side * Math.sign(dy) }
 }
 
+function cubicPoint(o: ArrowObject, t: number): Point {
+  const u = 1 - t
+  const a = u * u * u
+  const b = 3 * u * u * t
+  const c = 3 * u * t * t
+  const d = t * t * t
+  return {
+    x: a * o.from.x + b * o.c1.x + c * o.c2.x + d * o.to.x,
+    y: a * o.from.y + b * o.c1.y + c * o.c2.y + d * o.to.y,
+  }
+}
+
 function arrowPolyline(o: ArrowObject): Point[] {
   const segments = 24
   const points: Point[] = []
   for (let i = 0; i <= segments; i += 1) {
-    const t = i / segments
-    const u = 1 - t
-    const a = u * u * u
-    const b = 3 * u * u * t
-    const c = 3 * u * t * t
-    const d = t * t * t
-    points.push({
-      x: a * o.from.x + b * o.c1.x + c * o.c2.x + d * o.to.x,
-      y: a * o.from.y + b * o.c1.y + c * o.c2.y + d * o.to.y,
-    })
+    points.push(cubicPoint(o, i / segments))
   }
   return points
 }
@@ -270,8 +271,59 @@ function endDirection(o: ArrowObject): Point {
   return unit(o.to, o.c1)
 }
 
-function arrowPath(o: ArrowObject): string {
-  return `M ${o.from.x} ${o.from.y} C ${o.c1.x} ${o.c1.y} ${o.c2.x} ${o.c2.y} ${o.to.x} ${o.to.y}`
+/** de Casteljau 在 t 处分割，返回左段控制点（editor/curve.rs 的 split_left） */
+function splitCubic(o: ArrowObject, t: number): [Point, Point, Point, Point] {
+  const a = lerp(o.from, o.c1, t)
+  const b = lerp(o.c1, o.c2, t)
+  const c = lerp(o.c2, o.to, t)
+  const d = lerp(a, b, t)
+  const e = lerp(b, c, t)
+  return [o.from, a, d, lerp(d, e, t)]
+}
+
+/**
+ * 线身在头部三角边界处截断（render/mod.rs 的 draw_arrow）。
+ * 不截断的话，弯曲时线身会从三角侧面穿出来，看起来“三角跟直线对不上”。
+ */
+function arrowBodyPath(o: ArrowObject): string {
+  const points = arrowPolyline(o)
+  const total = polylineLength(points)
+  if (total < 0.5) return ''
+  const head = Math.min(Math.max(o.stroke * demo.arrow.headScale, demo.arrow.headMin), total)
+  const dir = endDirection(o)
+  const perp = { x: -dir.y, y: dir.x }
+  const base = { x: o.to.x - dir.x * head, y: o.to.y - dir.y * head }
+  const half = head * demo.arrow.headHalf
+  const inside = (point: Point): boolean => {
+    const dx = point.x - base.x
+    const dy = point.y - base.y
+    const s = dx * dir.x + dy * dir.y
+    // 尖端处的 s 刚好等于 head，不留容差会被判成“在外”，线身就画到尖端外面去了
+    if (s < -0.01 || s > head + 0.01) return false
+    return Math.abs(dx * perp.x + dy * perp.y) <= half * (1 - s / head) + 0.01
+  }
+  // 从终点往回找最后一个在三角外的采样点，再在这两段之间二分出精确边界
+  let cut = points.length - 1
+  while (cut > 0 && inside(points[cut])) cut -= 1
+  let t0 = cut / (points.length - 1)
+  if (cut < points.length - 1) {
+    let lo = t0
+    let hi = (cut + 1) / (points.length - 1)
+    for (let i = 0; i < 8; i += 1) {
+      const mid = (lo + hi) / 2
+      // 边界下方在外、上方在三角内：在外就抬高 lo，别把边界挤出区间
+      if (inside(cubicPoint(o, mid))) hi = mid
+      else lo = mid
+    }
+    t0 = lo
+  }
+  const seg = splitCubic(o, t0)
+  const rawTangent = unit(seg[3], seg[2])
+  const tangent = dist(seg[2], seg[3]) > 1e-6 ? rawTangent : dir
+  // 往三角里多探半个线宽，粗线在底边才不会留缝
+  const deep = Math.max(o.stroke / 2 + 1, 1)
+  const end = { x: seg[3].x + tangent.x * deep, y: seg[3].y + tangent.y * deep }
+  return `M ${o.from.x} ${o.from.y} C ${seg[1].x} ${seg[1].y} ${seg[2].x} ${seg[2].y} ${end.x} ${end.y}`
 }
 
 function arrowHead(o: ArrowObject): string {
@@ -407,6 +459,19 @@ function numberHead(o: NumberObject): string {
   return `${o.tip.x},${o.tip.y} ${base.x + perp.x * half},${base.y + perp.y * half} ${base.x - perp.x * half},${base.y - perp.y * half}`
 }
 
+/** 序号引线：线身同样在头部三角边界处截断，不能画到尖端外面去 */
+function numberLeaderPath(o: NumberObject): string {
+  const start = numberArrowStart(o)
+  const len = dist(start, o.tip)
+  if (len < 1) return ''
+  const dir = unit(o.tip, start)
+  const head = Math.min(Math.max(o.stroke * demo.arrow.headScale, demo.arrow.headMin), len)
+  const deep = Math.max(o.stroke / 2 + 1, 1)
+  // 线身从徽标边缘跑到头部底边，再往三角里探 deep
+  const bodyLen = Math.max(len - head + deep, 0)
+  return `M ${start.x} ${start.y} L ${start.x + dir.x * bodyLen} ${start.y + dir.y * bodyLen}`
+}
+
 function nextNumber(): number {
   const numbers = objects
     .filter((item): item is NumberObject => item.kind === 'number')
@@ -478,19 +543,34 @@ const handles = computed<HandleInfo[]>(() => {
 const squareHandles = computed(() => handles.value.filter((item) => item.id !== 'c1' && item.id !== 'c2'))
 const controlHandles = computed(() => handles.value.filter((item) => item.id === 'c1' || item.id === 'c2'))
 
+/** 圆角控制柄：矩形用 radius，高亮 / 模糊 / 聚光用 corner（同一套内缩规则） */
+function hasCorner(o: DemoObject): o is RectObject | HighlightObject | BlurObject | GlowObject {
+  return o.kind === 'rect' || o.kind === 'highlight' || o.kind === 'blur' || o.kind === 'glow'
+}
+
+function cornerValue(o: RectObject | HighlightObject | BlurObject | GlowObject): number {
+  return o.kind === 'rect' ? o.radius : o.corner
+}
+
+function setCornerValue(o: RectObject | HighlightObject | BlurObject | GlowObject, value: number): void {
+  if (o.kind === 'rect') o.radius = value
+  else o.corner = value
+}
+
 /** 圆角控制柄贴弧走：内缩 14 + 0.293 × r，最多到短边的 45% */
 const grip = computed(() => {
   const o = selected.value
-  if (!o || o.kind !== 'rect') return null
+  if (!o || !hasCorner(o) || playing.value) return null
+  const value = cornerValue(o)
   const inset = Math.min(
-    demo.radiusGrip.baseInset + demo.radiusGrip.arcToCorner * o.radius,
+    demo.radiusGrip.baseInset + demo.radiusGrip.arcToCorner * value,
     o.width * 0.45,
     o.height * 0.45,
   )
   return {
     x: o.x + o.width - inset,
     y: o.y + inset,
-    radius: o.radius,
+    value,
     max: Math.min(o.width, o.height) / 2,
   }
 })
@@ -592,6 +672,15 @@ function topmostObject(point: Point): DemoObject | null {
 
 type DragMode = 'radius' | 'move' | 'handle' | 'draft' | 'tip'
 
+/** 移动开始时的几何快照：每次 pointermove 都从它 + 位移重新算，不能累加 */
+type MoveStart =
+  | { kind: 'box'; x: number; y: number }
+  | { kind: 'arrow'; from: Point; to: Point; c1: Point; c2: Point }
+  | { kind: 'line'; from: Point; to: Point }
+  | { kind: 'freehand'; points: Point[] }
+  | { kind: 'text'; x: number; y: number }
+  | { kind: 'number'; center: Point; tip: Point }
+
 interface DragState {
   mode: DragMode
   handle: HandleKey | null
@@ -600,6 +689,7 @@ interface DragState {
   box: DOMRect
   startBox: { x: number; y: number; width: number; height: number; radius: number } | null
   startBounds: { x0: number; y0: number; x1: number; y1: number }
+  moveStart: MoveStart | null
 }
 
 let drag: DragState | null = null
@@ -661,21 +751,24 @@ function onPointerDown(ev: PointerEvent): void {
   const raw = stagePoint(ev, box)
   if (!raw || !box) return
   const point = clampPoint(raw)
-  // 用户一动手就接管：停掉自动演示，把字幕与引导一起收起
+  // 用户一动手就接管：停掉自动演示，但引导要留下（以前这里设成 done，用户一碰画布就再也看不到引导）
   if (playing.value) {
     clearTimers()
     playing.value = false
     caption.value = ''
-    guide.value = 'done'
+    guide.value = 'radius'
+    // 还没画完就被接管：剩一个 0 尺寸矩形没有意义，直接收走
+    const leftover = demoRect.value
+    if (leftover && isDegenerate(leftover)) removeObject(leftover)
   }
-  if (guide.value === 'radius') guide.value = 'width'
   aborted = true
   badgeMenuId.value = null
 
   const hit = hitTest(point)
   if (hit.type === 'radius') {
     const o = selected.value
-    if (!o || o.kind !== 'rect') return
+    if (!o || !hasCorner(o)) return
+    if (guide.value === 'radius') guide.value = 'width'
     beginDrag(
       {
         mode: 'radius',
@@ -683,8 +776,9 @@ function onPointerDown(ev: PointerEvent): void {
         object: o,
         origin: point,
         box,
-        startBox: { x: o.x, y: o.y, width: o.width, height: o.height, radius: o.radius },
+        startBox: { x: o.x, y: o.y, width: o.width, height: o.height, radius: cornerValue(o) },
         startBounds: boundsOf(o),
+        moveStart: null,
       },
       ev,
     )
@@ -705,6 +799,7 @@ function onPointerDown(ev: PointerEvent): void {
           ? { x: o.x, y: o.y, width: o.width, height: o.height, radius: o.kind === 'rect' ? o.radius : 0 }
           : null,
         startBounds: boundsOf(o),
+        moveStart: null,
       },
       ev,
     )
@@ -733,6 +828,7 @@ function onPointerDown(ev: PointerEvent): void {
             box,
             startBox: null,
             startBounds: boundsOf(o),
+            moveStart: snapshotForMove(o),
           },
           ev,
         )
@@ -761,21 +857,21 @@ function onDragPointerMove(ev: PointerEvent): void {
   if (drag.mode === 'radius') {
     const o = drag.object
     const start = drag.startBox
-    if (o.kind !== 'rect' || !start) return
+    if (!hasCorner(o) || !start) return
     const dx = point.x - drag.origin.x
     const dy = point.y - drag.origin.y
-    // 朝矩形中心（左下）拖增大、朝角（右上）拖减小：radius_delta = (dy - dx) / 2
-    o.radius = clamp(start.radius + (dy - dx) * 0.5, 0, Math.min(o.width, o.height) / 2)
+    // 朝中心（左下）拖增大、朝角（右上）拖减小：radius_delta = (dy - dx) / 2
+    setCornerValue(o, clamp(start.radius + (dy - dx) * 0.5, 0, Math.min(o.width, o.height) / 2))
     return
   }
 
-  if (drag.mode === 'move') {
+  if (drag.mode === 'move' && drag.moveStart) {
     const dx = point.x - drag.origin.x
     const dy = point.y - drag.origin.y
     const bounds = drag.startBounds
     const moveX = clamp(dx, -bounds.x0, Math.max(stage.width - bounds.x1, -bounds.x0))
     const moveY = clamp(dy, -bounds.y0, Math.max(stage.height - bounds.y1, -bounds.y0))
-    translate(drag.object, moveX, moveY)
+    applyMove(drag.object, drag.moveStart, moveX, moveY)
     return
   }
 
@@ -796,32 +892,54 @@ function onDragPointerMove(ev: PointerEvent): void {
   }
 }
 
-function translate(o: DemoObject, dx: number, dy: number): void {
-  if (isBox(o)) {
-    o.x += dx
-    o.y += dy
+function snapshotForMove(o: DemoObject): MoveStart {
+  if (isBox(o)) return { kind: 'box', x: o.x, y: o.y }
+  switch (o.kind) {
+    case 'arrow':
+      return { kind: 'arrow', from: { ...o.from }, to: { ...o.to }, c1: { ...o.c1 }, c2: { ...o.c2 } }
+    case 'line':
+      return { kind: 'line', from: { ...o.from }, to: { ...o.to } }
+    case 'freehand':
+      return { kind: 'freehand', points: o.points.map((point) => ({ ...point })) }
+    case 'text':
+      return { kind: 'text', x: o.x, y: o.y }
+    case 'number':
+      return { kind: 'number', center: { ...o.center }, tip: { ...o.tip } }
+  }
+}
+
+/** 从快照 + 位移算出位置（不是叠在当前位置上，否则每次 pointermove 都会重复累加） */
+function applyMove(o: DemoObject, start: MoveStart, dx: number, dy: number): void {
+  if (start.kind === 'box' && isBox(o)) {
+    o.x = start.x + dx
+    o.y = start.y + dy
     return
   }
-  if (o.kind === 'arrow' || o.kind === 'line') {
-    o.from = { x: o.from.x + dx, y: o.from.y + dy }
-    o.to = { x: o.to.x + dx, y: o.to.y + dy }
-    if (o.kind === 'arrow') {
-      o.c1 = { x: o.c1.x + dx, y: o.c1.y + dy }
-      o.c2 = { x: o.c2.x + dx, y: o.c2.y + dy }
-    }
+  if (start.kind === 'arrow' && o.kind === 'arrow') {
+    o.from = { x: start.from.x + dx, y: start.from.y + dy }
+    o.to = { x: start.to.x + dx, y: start.to.y + dy }
+    o.c1 = { x: start.c1.x + dx, y: start.c1.y + dy }
+    o.c2 = { x: start.c2.x + dx, y: start.c2.y + dy }
     return
   }
-  if (o.kind === 'freehand') {
-    o.points = o.points.map((point) => ({ x: point.x + dx, y: point.y + dy }))
+  if (start.kind === 'line' && o.kind === 'line') {
+    o.from = { x: start.from.x + dx, y: start.from.y + dy }
+    o.to = { x: start.to.x + dx, y: start.to.y + dy }
     return
   }
-  if (o.kind === 'text') {
-    o.x += dx
-    o.y += dy
+  if (start.kind === 'freehand' && o.kind === 'freehand') {
+    o.points = start.points.map((point) => ({ x: point.x + dx, y: point.y + dy }))
     return
   }
-  o.center = { x: o.center.x + dx, y: o.center.y + dy }
-  o.tip = { x: o.tip.x + dx, y: o.tip.y + dy }
+  if (start.kind === 'text' && o.kind === 'text') {
+    o.x = start.x + dx
+    o.y = start.y + dy
+    return
+  }
+  if (start.kind === 'number' && o.kind === 'number') {
+    o.center = { x: start.center.x + dx, y: start.center.y + dy }
+    o.tip = { x: start.tip.x + dx, y: start.tip.y + dy }
+  }
 }
 
 function updateHandle(state: DragState, point: Point, shift: boolean): void {
@@ -849,7 +967,7 @@ function updateHandle(state: DragState, point: Point, shift: boolean): void {
     o.width = width
     o.height = height
     // 缩小时圆角可能超过新的短边一半，跟着收回
-    if (o.kind === 'rect') o.radius = Math.min(o.radius, Math.min(width, height) / 2)
+    if (hasCorner(o)) setCornerValue(o, Math.min(cornerValue(o), Math.min(width, height) / 2))
     return
   }
 
@@ -936,7 +1054,12 @@ function isDegenerate(o: DemoObject): boolean {
 }
 
 function finishDraft(o: DemoObject): void {
-  if (isDegenerate(o)) removeObject(o)
+  if (isDegenerate(o)) {
+    removeObject(o)
+    return
+  }
+  // 真的画出了新对象，圆角引导就收起来
+  if (guide.value !== 'done') guide.value = 'done'
 }
 
 function removeObject(o: DemoObject): void {
@@ -992,8 +1115,8 @@ function createObject(tool: string, point: Point): DemoObject | null {
         kind: 'number',
         center: { ...point },
         tip: { ...point },
-        mark: mark.value,
-        value: mark.value === 'num' ? nextNumber() : 0,
+        mark: 'num',
+        value: nextNumber(),
         fontSize: defaults.numberSize,
         stroke: defaults.stroke,
         color: base.color,
@@ -1027,6 +1150,7 @@ function startDraft(point: Point, box: DOMRect, ev: PointerEvent): void {
       box,
       startBox: null,
       startBounds: boundsOf(o),
+      moveStart: null,
     },
     ev,
   )
@@ -1115,9 +1239,11 @@ const badgeToggleStyle = computed(() => {
 const badgeMenuStyle = computed(() => {
   const o = selectedNumber.value
   if (!o) return {}
+  const left = ((o.center.x - numberRadius(o)) / stage.width) * 100
   return {
-    left: `${((o.center.x - numberRadius(o)) / stage.width) * 100}%`,
-    top: `calc(${badgeToggleStyle.value.top} + 22px)`,
+    // 贴边时往回收：菜单约 78 × 92，不夹会被舞台的 overflow: hidden 裁掉
+    left: `clamp(0px, ${left}%, calc(100% - 78px))`,
+    top: `min(calc(${badgeToggleStyle.value.top} + 22px), calc(100% - 92px))`,
   }
 })
 
@@ -1131,8 +1257,6 @@ function setBadgeMark(o: NumberObject, next: BadgeMark): void {
   const wasSymbol = o.mark !== 'num'
   o.mark = next
   if (next === 'num' && wasSymbol) o.value = nextNumber()
-  // 工具栏的徽标形态是全局状态：下一次落下的徽标沿用这次的选择
-  mark.value = next
   badgeMenuId.value = null
 }
 
@@ -1212,18 +1336,21 @@ function onWheel(ev: WheelEvent): void {
   const changed = target ? adjustObject(target, delta) : adjustDefault(activeTool.value, delta)
   if (!changed) return
   ev.preventDefault()
-  if (guide.value !== 'done') guide.value = 'done'
+  // 只有已经完成第一步（拖过圆角柄）时，滚轮才算完成第二步
+  if (guide.value === 'width') guide.value = 'done'
 }
 
 /** 键盘也能改圆角：圆点可以 Tab 到，方向键增减 */
 function onGripKey(ev: KeyboardEvent): void {
   const o = selected.value
-  if (!o || o.kind !== 'rect') return
+  if (!o || !hasCorner(o)) return
+  const value = cornerValue(o)
+  const max = Math.min(o.width, o.height) / 2
   const step = ev.shiftKey ? 5 : 1
   if (ev.key === 'ArrowUp' || ev.key === 'ArrowRight') {
-    o.radius = Math.min(o.radius + step, Math.min(o.width, o.height) / 2)
+    setCornerValue(o, Math.min(value + step, max))
   } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowLeft') {
-    o.radius = Math.max(o.radius - step, 0)
+    setCornerValue(o, Math.max(value - step, 0))
   } else {
     return
   }
@@ -1407,7 +1534,6 @@ function resetDemo(): void {
   defaults.blur = demo.blur.default
   defaults.textSize = demo.text.defaultSize
   defaults.numberSize = demo.number.defaultFontSize
-  mark.value = 'num'
   filled.value = false
   void autoplay()
 }
@@ -1523,11 +1649,14 @@ const statusText = computed(() => {
     case 'freehand':
       return `线宽 ${Math.round(o.stroke)}px`
     case 'blur':
-      return `模糊 ${Math.round(o.radius)}px`
+      return `模糊 ${Math.round(o.radius)}px · 圆角 ${Math.round(o.corner)}px`
     case 'text':
       return `字号 ${Math.round(o.fontSize)}px`
     case 'number':
       return o.mark === 'num' ? `编号 ${o.value}` : o.mark === 'check' ? '对勾徽标' : '叉号徽标'
+    case 'highlight':
+    case 'glow':
+      return `圆角 ${Math.round(o.corner)}px`
     default:
       return ''
   }
@@ -1536,6 +1665,10 @@ const statusText = computed(() => {
 
 <template>
   <div class="as-demo" :style="paletteStyle">
+    <p class="as-demo__notice">
+      软件里按 <kbd>1</kbd>–<kbd>9</kbd> / <kbd>0</kbd> 就能直接切换这十个工具（快捷键可在设置里改）；下面只是简化演示，不代表全部功能。
+    </p>
+
     <div
       ref="stageEl"
       class="as-demo__stage"
@@ -1641,7 +1774,7 @@ const statusText = computed(() => {
           />
           <g v-else-if="obj.kind === 'arrow'">
             <path
-              :d="arrowPath(obj)"
+              :d="arrowBodyPath(obj)"
               :stroke="obj.color"
               :stroke-width="obj.stroke"
               fill="none"
@@ -1682,13 +1815,11 @@ const statusText = computed(() => {
           </text>
           <g v-else-if="obj.kind === 'number'">
             <template v-if="dist(obj.center, obj.tip) >= 1">
-              <line
-                :x1="numberArrowStart(obj).x"
-                :y1="numberArrowStart(obj).y"
-                :x2="obj.tip.x"
-                :y2="obj.tip.y"
+              <path
+                :d="numberLeaderPath(obj)"
                 :stroke="obj.color"
                 :stroke-width="obj.stroke"
+                fill="none"
                 stroke-linecap="butt"
               />
               <polygon :points="numberHead(obj)" :fill="obj.color" />
@@ -1785,7 +1916,7 @@ const statusText = computed(() => {
           tabindex="0"
           role="slider"
           aria-label="圆角半径"
-          :aria-valuenow="Math.round(grip.radius)"
+          :aria-valuenow="Math.round(grip.value)"
           aria-valuemin="0"
           :aria-valuemax="grip.max"
           @keydown="onGripKey"
@@ -1799,6 +1930,20 @@ const statusText = computed(() => {
           :r="roundSize * 1.8"
           :stroke="demo.frame.accent"
           stroke-width="1.5"
+          fill="none"
+          aria-hidden="true"
+        />
+
+        <!-- 脉冲只跳三次，停下来的间隙留一圈虚线，免得用户错过引导 -->
+        <circle
+          v-if="showHint && guide === 'radius' && guidePoint"
+          class="as-demo__hint-ring"
+          :cx="guidePoint.x"
+          :cy="guidePoint.y"
+          :r="roundSize * 2.6"
+          :stroke="demo.frame.accent"
+          stroke-width="1.5"
+          stroke-dasharray="3 3"
           fill="none"
           aria-hidden="true"
         />
@@ -1982,7 +2127,7 @@ const statusText = computed(() => {
 
     <p class="as-demo__hint">
       <template v-if="activeTool === 'rect'">
-        拖右上角那个小圆点改圆角，拖八个白方块缩放，拖矩形本身移动，在矩形上滚滚轮调线宽（按住 Ctrl 三倍步进）。
+        拖右上角的小圆点改圆角、拖八个白方块缩放；想移动就先点最左边的「移动」再拖，在矩形上滚滚轮调线宽（按住 Ctrl 三倍步进）。
         右上角还能切软件的浅色 / 深色主题（软件里另有「跟随系统」）。
       </template>
       <template v-else-if="activeTool === 'move'">

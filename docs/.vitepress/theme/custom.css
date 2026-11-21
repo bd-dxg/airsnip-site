@@ -821,6 +821,14 @@ button:focus-visible,
   padding: 0 24px;
 }
 
+/* 画布上方的说明：软件能用数字键切工具，这里的舞台只是简化演示 */
+.as-demo__notice {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
 .as-demo__stage {
   /* 工具栏按 115% 呈现：1:1 的 26px 按钮在 1120 宽的舞台上偏小 */
   --as-demo-scale: 1.15;
@@ -1065,6 +1073,12 @@ button:focus-visible,
   text-decoration: underline;
 }
 
+/* 引导虚线环：脉冲停下来的间隙也能看到「该拖这里」 */
+.as-demo__hint-ring {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 /* 指向圆角柄的脉冲圈：播三次就停，用户一动手就收 */
 .as-demo__pulse {
   pointer-events: none;
@@ -1120,10 +1134,11 @@ button:focus-visible,
   transform: translate(14px, -50%);
 }
 
-/* 自动演示时的顶部步骤字幕：它是这段动画的主解说，字号得能当标题读 */
+/* 自动演示时的步骤字幕：当底部的字幕用，紧贴工具栏上方。
+   放在顶部会让「读字」和「看动画」二选一——矩形在画面中间偏下，字幕得跟着它 */
 .as-demo__caption {
   position: absolute;
-  top: 20px;
+  bottom: calc(68px * var(--as-demo-scale, 1.15));
   left: 50%;
   z-index: 2;
   max-width: calc(100% - 40px);
