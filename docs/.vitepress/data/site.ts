@@ -432,18 +432,37 @@ export const heroShot = {
  * - 默认颜色：src/editor/palette.rs；默认线宽：src/editor/tool.rs
  */
 export const demo = {
-  /** 深色工具栏调色板（覆盖层工具栏现行风格） */
-  palette: {
-    bg: 'rgba(32, 32, 32, 0.941)',
-    border: 'rgba(255, 255, 255, 0.235)',
-    icon: 'rgba(255, 255, 255, 0.922)',
-    iconDim: 'rgba(255, 255, 255, 0.275)',
-    divider: 'rgba(255, 255, 255, 0.157)',
-    accent: '#1a73e8',
-    accentSoft: 'rgba(26, 115, 232, 0.353)',
-    swatchBorder: 'rgba(0, 0, 0, 0.471)',
-    rowHover: 'rgba(255, 255, 255, 0.071)',
+  /**
+   * 两套调色板，对应 src/theme/mod.rs 的 DARK / LIGHT。
+   * 覆盖层工具栏取的是 `theme::palette(resolve(config.theme))`，所以软件切浅色时它就真变成浅色条。
+   */
+  palettes: {
+    dark: {
+      bg: 'rgba(32, 32, 32, 0.941)',
+      border: 'rgba(255, 255, 255, 0.235)',
+      icon: 'rgba(255, 255, 255, 0.922)',
+      divider: 'rgba(255, 255, 255, 0.157)',
+      accent: '#1a73e8',
+      accentSoft: 'rgba(26, 115, 232, 0.353)',
+      swatchBorder: 'rgba(0, 0, 0, 0.471)',
+      rowHover: 'rgba(255, 255, 255, 0.071)',
+      shadow: '0 16px 40px -16px rgba(0, 0, 0, 0.55)',
+    },
+    light: {
+      bg: 'rgba(248, 248, 248, 0.965)',
+      border: 'rgba(0, 0, 0, 0.176)',
+      icon: 'rgba(40, 40, 40, 0.922)',
+      divider: 'rgba(0, 0, 0, 0.098)',
+      accent: '#1a73e8',
+      accentSoft: 'rgba(26, 115, 232, 0.157)',
+      swatchBorder: 'rgba(0, 0, 0, 0.235)',
+      rowHover: 'rgba(0, 0, 0, 0.039)',
+      shadow: '0 16px 40px -16px rgba(15, 23, 42, 0.42)',
+    },
   },
+
+  /** 覆盖层会把屏幕整体压暗（两种主题一致）；演示台只留一点点，多了会发闷 */
+  dimmer: 'rgba(15, 23, 42, 0.08)',
 
   /** 舞台 viewBox：与 .as-demo__stage 的 16:10 一致，1 单位 = 1 CSS px */
   stage: { width: 1120, height: 700 },
@@ -480,11 +499,20 @@ export const demo = {
   /** 选中框与手柄（frame.rs） */
   frame: { accent: '#1a73e8', handle: 7, round: 3.5, lineWidth: 1 },
 
-  /** 圆角控制柄：内缩 14 + 0.293 × r，上限 min(宽, 高) / 2 */
-  radiusGrip: { baseInset: 14, arcToCorner: 0.293, pickRadius: 9 },
+  /** 手柄命中半径（pick/mod.rs 的 PICK_RADIUS_BASE） */
+  pickRadius: 6,
 
-  /** 演示台的初始矩形（舞台坐标）；圆角从 0 开始，与新建矩形的真实行为一致 */
-  initialRect: { x: 260, y: 250, width: 620, height: 330 },
+  /** 缩放的最小边长（objedit/mod.rs 的 MIN_SIZE） */
+  minSide: 4,
+
+  /** 圆角控制柄：内缩 14 + 0.293 × r，上限 min(宽, 高) / 2 */
+  radiusGrip: { baseInset: 14, arcToCorner: 0.293 },
+
+  /** 底图那张白色卡片的位置与尺寸（舞台 viewBox 坐标，组件按百分比摆） */
+  docCard: { x: 300, y: 200, width: 520, height: 300 },
+
+  /** 演示台的初始矩形（舞台坐标）：框住卡片里的日志区，不切到标题与 URL 行 */
+  initialRect: { x: 344, y: 252, width: 432, height: 200 },
 
   /** 第一行工具栏里工具之外的元素，顺序与 toolbar::layout 的组分一致 */
   actions: {

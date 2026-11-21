@@ -841,32 +841,52 @@ button:focus-visible,
 .as-demo__doc {
   position: absolute;
   inset: 0;
-  padding: 56px 64px;
+  background-image: linear-gradient(180deg, #eef2f8 0%, #e2e8f0 100%);
+}
+
+/* 白色卡片：压暗后仍能看出「亮卡片 / 灰桌面」的层次 */
+.as-demo__panel {
+  position: absolute;
+  padding: 20px 24px 18px;
+  overflow: hidden;
   font-family: var(--vp-font-family-mono);
   font-size: 15px;
   line-height: 1.6;
-  color: #94a3b8;
-  background-image: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  color: #64748b;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 16px 40px -20px rgba(15, 23, 42, 0.35);
+}
+
+/* 覆盖层会把屏幕整体压暗，两种主题一致（--as-demo-dimmer 来自 site.ts） */
+.as-demo__doc::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background-color: var(--as-demo-dimmer, rgba(15, 23, 42, 0.32));
 }
 
 .as-demo__doc-title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #475569;
+  color: #1e293b;
 }
 
 .as-demo__doc-title span {
   margin-left: 10px;
   font-size: 13px;
   font-weight: 400;
-  color: #cbd5e1;
+  color: #94a3b8;
 }
 
 .as-demo__log {
   display: grid;
-  gap: 12px;
-  margin: 20px 0 0;
+  gap: 10px;
+  margin: 18px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -879,7 +899,15 @@ button:focus-visible,
 .as-demo__log em {
   margin-left: auto;
   font-style: normal;
-  color: #cbd5e1;
+  color: #94a3b8;
+}
+
+.as-demo__doc-url {
+  margin: 16px 0 0;
+  padding-top: 14px;
+  font-size: 13px;
+  color: #94a3b8;
+  border-top: 1px solid #e2e8f0;
 }
 
 .as-demo__ok {
@@ -890,13 +918,42 @@ button:focus-visible,
   color: #dc2626;
 }
 
-/* 标注层：铺满舞台，只有圆角柄自己接收指针事件 */
+/* 标注层：铺满舞台，只有手柄与对象本体接收指针事件 */
 .as-demo__ink {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+/* 透明命中区：让矩形内部也能拖动移动，cursor 也跟着变 */
+.as-demo__hit {
+  pointer-events: all;
+  cursor: grab;
+}
+
+.as-demo__stage.is-dragging .as-demo__hit {
+  cursor: grabbing;
+}
+
+.as-demo__object {
+  pointer-events: none;
+}
+
+/* 自动演示期间才给矩形加过渡；平时拖拽必须是即时的。
+   画框用接近匀速的 ease-in-out，ease-out 会开头猛冲，看着像抽搐 */
+.as-demo__stage.is-playing .as-demo__object {
+  transition:
+    width 1000ms cubic-bezier(0.45, 0, 0.55, 1),
+    height 1000ms cubic-bezier(0.45, 0, 0.55, 1),
+    rx 900ms cubic-bezier(0.45, 0, 0.55, 1),
+    ry 900ms cubic-bezier(0.45, 0, 0.55, 1),
+    stroke-width 700ms cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.as-demo__handle {
+  pointer-events: auto;
 }
 
 .as-demo__grip {
@@ -906,17 +963,156 @@ button:focus-visible,
 
 .as-demo__grip:hover,
 .as-demo__grip:focus-visible {
-  r: 5;
+  stroke-width: 3;
 }
 
 .as-demo__grip:focus-visible {
   outline: none;
-  stroke-width: 3;
+}
+
+/* 指向圆角柄的脉冲圈：播三次就停，用户一动手就收 */
+.as-demo__pulse {
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: as-demo-pulse 1800ms var(--ease-out) 3;
+}
+
+@keyframes as-demo-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.as-demo__pointer {
+  position: absolute;
+  top: var(--as-demo-y);
+  left: var(--as-demo-x);
+  z-index: 2;
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 7px 12px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #fff;
+  white-space: nowrap;
+  background-color: var(--as-demo-accent, #1a73e8);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.as-demo__pointer strong {
+  font-weight: 600;
+}
+
+.as-demo__pointer span {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.as-demo__pointer--left {
+  transform: translate(calc(-100% - 14px), -50%);
+}
+
+.as-demo__pointer--right {
+  transform: translate(14px, -50%);
+}
+
+/* 自动演示时的顶部步骤字幕：它是这段动画的主解说，字号得能当标题读 */
+.as-demo__caption {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  z-index: 2;
+  max-width: calc(100% - 40px);
+  margin: 0;
+  padding: 10px 22px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+  text-align: center;
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px -10px rgba(15, 23, 42, 0.35);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* 演示辅助按钮：它不是软件功能，所以不放进工具栏 */
+.as-demo__controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 两档主题切换：对应软件设置里的浅色 / 深色（三档里的「跟随系统」在网页上无法体现） */
+.as-demo__theme {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+}
+
+.as-demo__theme button {
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--vp-c-text-2);
+  background-color: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.as-demo__theme button:hover {
+  color: var(--vp-c-text-1);
+}
+
+.as-demo__theme button.is-active {
+  color: #fff;
+  background-color: var(--vp-c-brand-1);
+}
+
+.as-demo__reset {
+  padding: 5px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--vp-c-text-2);
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.as-demo__reset:hover {
+  color: var(--vp-c-text-1);
+  background-color: #fff;
 }
 
 /* 工具栏：几何全部是软件里的基准像素 × --as-demo-scale */
 .as-demo__toolbar {
-  --s: var(--as-demo-scale);
+  --s: var(--as-demo-scale, 1.15);
   position: absolute;
   bottom: calc(22px * var(--s));
   left: 50%;
@@ -925,11 +1121,15 @@ button:focus-visible,
   gap: calc(4px * var(--s));
   height: calc(34px * var(--s));
   padding: 0 calc(5px * var(--s));
-  background-color: var(--as-demo-bg);
-  border: 1px solid var(--as-demo-border);
+  background-color: var(--as-demo-bg, rgba(32, 32, 32, 0.941));
+  border: 1px solid var(--as-demo-border, rgba(255, 255, 255, 0.235));
   border-radius: calc(8px * var(--s));
-  box-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.4);
+  box-shadow: var(--as-demo-shadow, 0 16px 40px -16px rgba(0, 0, 0, 0.55));
   transform: translateX(-50%);
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
 }
 
 .as-demo__btn {
@@ -939,21 +1139,23 @@ button:focus-visible,
   width: calc(26px * var(--s));
   height: calc(26px * var(--s));
   padding: 0;
-  color: var(--as-demo-icon);
+  color: var(--as-demo-icon, rgba(255, 255, 255, 0.922));
   background-color: transparent;
   border: none;
   border-radius: calc(5px * var(--s));
   cursor: pointer;
-  transition: background-color var(--motion-fast) var(--ease-out);
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
 }
 
 .as-demo__btn:hover {
-  background-color: var(--as-demo-row-hover);
+  background-color: var(--as-demo-row-hover, rgba(255, 255, 255, 0.071));
 }
 
 .as-demo__btn.is-active {
   color: #fff;
-  background-color: var(--as-demo-accent-soft);
+  background-color: var(--as-demo-accent-soft, rgba(26, 115, 232, 0.353));
 }
 
 .as-demo__btn--wide {
@@ -972,13 +1174,14 @@ button:focus-visible,
   height: calc(20px * var(--s));
 }
 
-/* 图标是软件仓库里的 SVG，用 mask 上色，currentColor 跟着按钮态走 */
+/* 图标是软件仓库里的 SVG，用 mask 上色，currentColor 跟着按钮态与主题走 */
 .as-demo__icon {
   width: calc(18px * var(--s));
   height: calc(18px * var(--s));
   background-color: currentColor;
-  -webkit-mask: var(--as-demo-mask) center / contain no-repeat;
-  mask: var(--as-demo-mask) center / contain no-repeat;
+  -webkit-mask: var(--as-demo-mask, none) center / contain no-repeat;
+  mask: var(--as-demo-mask, none) center / contain no-repeat;
+  transition: background-color var(--motion-fast) var(--ease-out);
 }
 
 .as-demo__sep {
@@ -986,7 +1189,7 @@ button:focus-visible,
   width: 1px;
   height: calc(16px * var(--s));
   margin: 0 calc(2.5px * var(--s));
-  background-color: var(--as-demo-divider);
+  background-color: var(--as-demo-divider, rgba(255, 255, 255, 0.157));
 }
 
 .as-demo__swatch {
@@ -997,12 +1200,13 @@ button:focus-visible,
   background-color: var(--as-demo-swatch);
   border: none;
   border-radius: calc(8px * var(--s));
-  box-shadow: inset 0 0 0 1px var(--as-demo-swatch-border);
+  box-shadow: inset 0 0 0 1px var(--as-demo-swatch-border, rgba(0, 0, 0, 0.471));
   cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out);
 }
 
 .as-demo__swatch.is-active {
-  box-shadow: 0 0 0 2px var(--as-demo-accent);
+  box-shadow: 0 0 0 2px var(--as-demo-accent, #1a73e8);
 }
 
 .as-demo__swatch--gradient {
@@ -1034,9 +1238,40 @@ button:focus-visible,
     display: none;
   }
 
+  /* 窄屏放不下跟随点位的标签，改成固定贴在工具栏上方左侧 */
+  .as-demo__pointer {
+    top: auto;
+    bottom: calc(56px * var(--as-demo-scale, 1.15) + 16px);
+    left: 12px;
+    max-width: 150px;
+    white-space: normal;
+    transform: none;
+  }
+
+  .as-demo__caption {
+    padding: 7px 14px;
+    font-size: 14px;
+    white-space: normal;
+  }
+
   .as-demo__doc {
-    padding: 28px 24px;
-    font-size: 12px;
+    padding: 20px 16px;
+  }
+
+  .as-demo__panel {
+    padding: 12px 14px 10px;
+    font-size: 11px;
+  }
+
+  .as-demo__log {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .as-demo__doc-url {
+    margin-top: 10px;
+    padding-top: 8px;
+    font-size: 10px;
   }
 }
 
