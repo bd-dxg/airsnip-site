@@ -19,5 +19,8 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "dependencies": {
+    "motion-v": "^2.13.0"
   }
 }

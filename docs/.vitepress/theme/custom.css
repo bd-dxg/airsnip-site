@@ -813,6 +813,233 @@ button:focus-visible,
   }
 }
 
+/* ---------- 首页演示台 ---------- */
+
+.as-demo {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.as-demo__stage {
+  /* 工具栏按 115% 呈现：1:1 的 26px 按钮在 1120 宽的舞台上偏小 */
+  --as-demo-scale: 1.15;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1120 / 700;
+  /* 拖圆角柄时不锁死竖向翻页 */
+  touch-action: pan-y;
+  /* 拖柄时不要选中背景日志文字 */
+  user-select: none;
+  background-color: #f7f8fa;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 18px;
+  box-shadow: var(--as-shadow-card);
+}
+
+/* 舞台底图：假部署日志，只作背景，不参与交互 */
+.as-demo__doc {
+  position: absolute;
+  inset: 0;
+  padding: 56px 64px;
+  font-family: var(--vp-font-family-mono);
+  font-size: 15px;
+  line-height: 1.6;
+  color: #94a3b8;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+.as-demo__doc-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.as-demo__doc-title span {
+  margin-left: 10px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #cbd5e1;
+}
+
+.as-demo__log {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.as-demo__log li {
+  display: flex;
+  gap: 10px;
+}
+
+.as-demo__log em {
+  margin-left: auto;
+  font-style: normal;
+  color: #cbd5e1;
+}
+
+.as-demo__ok {
+  color: #16a34a;
+}
+
+.as-demo__fail {
+  color: #dc2626;
+}
+
+/* 标注层：铺满舞台，只有圆角柄自己接收指针事件 */
+.as-demo__ink {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.as-demo__grip {
+  pointer-events: auto;
+  cursor: nesw-resize;
+}
+
+.as-demo__grip:hover,
+.as-demo__grip:focus-visible {
+  r: 5;
+}
+
+.as-demo__grip:focus-visible {
+  outline: none;
+  stroke-width: 3;
+}
+
+/* 工具栏：几何全部是软件里的基准像素 × --as-demo-scale */
+.as-demo__toolbar {
+  --s: var(--as-demo-scale);
+  position: absolute;
+  bottom: calc(22px * var(--s));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: calc(4px * var(--s));
+  height: calc(34px * var(--s));
+  padding: 0 calc(5px * var(--s));
+  background-color: var(--as-demo-bg);
+  border: 1px solid var(--as-demo-border);
+  border-radius: calc(8px * var(--s));
+  box-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.4);
+  transform: translateX(-50%);
+}
+
+.as-demo__btn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: calc(26px * var(--s));
+  height: calc(26px * var(--s));
+  padding: 0;
+  color: var(--as-demo-icon);
+  background-color: transparent;
+  border: none;
+  border-radius: calc(5px * var(--s));
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.as-demo__btn:hover {
+  background-color: var(--as-demo-row-hover);
+}
+
+.as-demo__btn.is-active {
+  color: #fff;
+  background-color: var(--as-demo-accent-soft);
+}
+
+.as-demo__btn--wide {
+  width: calc(52px * var(--s));
+}
+
+/* 工具栏后半段（色块 → 输出组）；窄屏空间不够，整段不显示 */
+.as-demo__extra {
+  display: flex;
+  align-items: center;
+  gap: calc(4px * var(--s));
+}
+
+.as-demo__linestyle {
+  width: calc(46px * var(--s));
+  height: calc(20px * var(--s));
+}
+
+/* 图标是软件仓库里的 SVG，用 mask 上色，currentColor 跟着按钮态走 */
+.as-demo__icon {
+  width: calc(18px * var(--s));
+  height: calc(18px * var(--s));
+  background-color: currentColor;
+  -webkit-mask: var(--as-demo-mask) center / contain no-repeat;
+  mask: var(--as-demo-mask) center / contain no-repeat;
+}
+
+.as-demo__sep {
+  flex: none;
+  width: 1px;
+  height: calc(16px * var(--s));
+  margin: 0 calc(2.5px * var(--s));
+  background-color: var(--as-demo-divider);
+}
+
+.as-demo__swatch {
+  flex: none;
+  width: calc(22px * var(--s));
+  height: calc(22px * var(--s));
+  padding: 0;
+  background-color: var(--as-demo-swatch);
+  border: none;
+  border-radius: calc(8px * var(--s));
+  box-shadow: inset 0 0 0 1px var(--as-demo-swatch-border);
+  cursor: pointer;
+}
+
+.as-demo__swatch.is-active {
+  box-shadow: 0 0 0 2px var(--as-demo-accent);
+}
+
+.as-demo__swatch--gradient {
+  background-image: linear-gradient(135deg, var(--as-demo-swatch-from), var(--as-demo-swatch-to));
+}
+
+.as-demo__hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.as-demo__state {
+  font-family: var(--vp-font-family-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-1);
+}
+
+@media (max-width: 767px) {
+  .as-demo__stage {
+    --as-demo-scale: 0.9;
+  }
+
+  .as-demo__extra {
+    display: none;
+  }
+
+  .as-demo__doc {
+    padding: 28px 24px;
+    font-size: 12px;
+  }
+}
+
 /* ---------- 减少动态效果 ---------- */
 
 @media (prefers-reduced-motion: reduce) {

@@ -17,6 +17,8 @@ export interface Tool {
   key: string
   name: string
   description: string
+  /** 演示台图标文件名，取自软件仓库 assets/icons/ui/toolbar/<icon>.svg */
+  icon: string
 }
 
 export interface Shortcut {
@@ -177,52 +179,62 @@ export const tools: Tool[] = [
   {
     key: '1',
     name: '矩形',
+    icon: 'rect',
     description: '描边颜色（含渐变）、线型、线宽、填充、圆角。',
   },
   {
     key: '2',
     name: '箭头',
+    icon: 'arrow',
     description: '直线或曲线（三次贝塞尔），头部随线宽缩放；Shift 吸附水平 / 垂直 / 45°。',
   },
   {
     key: '3',
     name: '文本',
+    icon: 'text',
     description: '中文输入法、系统全部字体、粗体 / 斜体、字号，双击再编辑。',
   },
   {
     key: '4',
     name: '高斯模糊',
+    icon: 'blur',
     description: '拖动区域即模糊，强度滚轮可调。',
   },
   {
     key: '5',
     name: '荧光笔',
+    icon: 'highlight',
     description: '正片叠底半透明色块，不遮挡底图文字。',
   },
   {
     key: '6',
     name: '聚光灯',
+    icon: 'glow',
     description: '选区内整体暗化、绘制区域恢复原亮，可叠加多块。',
   },
   {
     key: '7',
     name: '序号',
+    icon: 'number',
     description:
       '徽标：点一下落下编号并自动 +1，双击改数字、后续从改后的值继续 +1；格子右下角 ▾ 切换数字 / 对勾 / 叉号，符号不占编号。',
   },
   {
     key: '8',
     name: '直线',
+    icon: 'line',
     description: '按住 Shift 吸附水平 / 垂直 / 45°，只有头尾两个端点手柄。',
   },
   {
     key: '9',
     name: '椭圆',
+    icon: 'ellipse',
     description: '按住 Shift 画正圆，与矩形共用填充开关。',
   },
   {
     key: '0',
     name: '手绘',
+    icon: 'freehand',
     description: '按 2px 最小步距采样点列，二次贝塞尔平滑，命中按折线距离判定。',
   },
 ]
@@ -408,3 +420,86 @@ export const heroShot = {
   alt: '按 F1 后的截图覆盖层：背景整体压暗，选区框住网页内容并显示选区尺寸，屏幕底部一行标注工具栏',
   caption: '按 F1 后的样子：屏幕冻结、框选任意区域，底部一行就是全部标注工具。',
 }
+
+/**
+ * 首页演示台（DemoStage）用的真实参数，每一项都能在软件源码里找到出处。
+ * 改任何数字前先对一遍源码，不在组件里另写一份：
+ * - 调色板：src/theme/mod.rs（`DARK`，RGBA 已换算成 CSS 写法）
+ * - 工具栏几何：src/overlay/toolbar/mod.rs（各 `*_BASE` 常量）
+ * - 滚轮步进与范围：src/overlay/wheel.rs
+ * - 选中框、手柄、强调色：src/overlay/objedit/frame.rs
+ * - 圆角控制柄：src/overlay/objedit/mod.rs（`RADIUS_GRIP_BASE` / `ARC_TO_CORNER`）
+ * - 默认颜色：src/editor/palette.rs；默认线宽：src/editor/tool.rs
+ */
+export const demo = {
+  /** 深色工具栏调色板（覆盖层工具栏现行风格） */
+  palette: {
+    bg: 'rgba(32, 32, 32, 0.941)',
+    border: 'rgba(255, 255, 255, 0.235)',
+    icon: 'rgba(255, 255, 255, 0.922)',
+    iconDim: 'rgba(255, 255, 255, 0.275)',
+    divider: 'rgba(255, 255, 255, 0.157)',
+    accent: '#1a73e8',
+    accentSoft: 'rgba(26, 115, 232, 0.353)',
+    swatchBorder: 'rgba(0, 0, 0, 0.471)',
+    rowHover: 'rgba(255, 255, 255, 0.071)',
+  },
+
+  /** 舞台 viewBox：与 .as-demo__stage 的 16:10 一致，1 单位 = 1 CSS px */
+  stage: { width: 1120, height: 700 },
+
+  /** 工具栏基准几何（100% DPI 下就是屏幕像素） */
+  toolbar: {
+    height: 34,
+    rowGap: 3,
+    button: 26,
+    swatch: 22,
+    gap: 4,
+    sep: 9,
+    pad: 5,
+    radius: 8,
+    /** 线型格子占两格宽：要看出「段 + 隙」 */
+    lineSlot: 52,
+    /** 图标在按钮里的绘制边长 */
+    iconSize: 18,
+  },
+
+  /** 描边类工具的默认值与滚轮范围（wheel.rs / tool.rs） */
+  stroke: {
+    color: '#e53935',
+    defaultWidth: 4,
+    minWidth: 1,
+    maxWidth: 32,
+    /** 滚轮一格 1px，按住 Ctrl 三倍 */
+    wheelStep: 1,
+    ctrlStep: 3,
+    /** 命中判定放宽量：指针离矩形多远内算「悬停在这个对象上」 */
+    hitSlop: 8,
+  },
+
+  /** 选中框与手柄（frame.rs） */
+  frame: { accent: '#1a73e8', handle: 7, round: 3.5, lineWidth: 1 },
+
+  /** 圆角控制柄：内缩 14 + 0.293 × r，上限 min(宽, 高) / 2 */
+  radiusGrip: { baseInset: 14, arcToCorner: 0.293, pickRadius: 9 },
+
+  /** 演示台的初始矩形（舞台坐标）；圆角从 0 开始，与新建矩形的真实行为一致 */
+  initialRect: { x: 260, y: 250, width: 620, height: 330 },
+
+  /** 第一行工具栏里工具之外的元素，顺序与 toolbar::layout 的组分一致 */
+  actions: {
+    move: { name: '移动', icon: 'move', hint: 'V' },
+    fill: { name: '填充', icon: 'fill', hint: '' },
+    line: { name: '线型', icon: 'line', hint: '' },
+    undo: { name: '撤销', icon: 'undo', hint: 'Ctrl+Z' },
+    redo: { name: '重做', icon: 'redo', hint: 'Ctrl+Y' },
+    pin: { name: '贴图', icon: 'pin', hint: 'F3' },
+    longshot: { name: '长截图', icon: 'longshot', hint: 'S' },
+    copy: { name: '复制', icon: 'copy', hint: 'Enter' },
+    quickSave: { name: '快存', icon: 'quick_save', hint: 'Alt+S' },
+    save: { name: '保存', icon: 'save', hint: 'Ctrl+S' },
+  },
+
+  /** 工具栏里的三个色块：两个纯色 + 一个渐变（palette.rs 的 DEFAULT_COLORS） */
+  swatches: { solid: ['#e53935', '#fb8c00'], gradient: ['#e53935', '#fb8c00'] },
+} as const

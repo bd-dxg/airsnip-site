@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme'
 import AudienceCards from './components/AudienceCards.vue'
+import DemoStage from './components/DemoStage.vue'
 import DownloadCard from './components/DownloadCard.vue'
-import HeroShot from './components/HeroShot.vue'
 import ProductTour from './components/ProductTour.vue'
 import ReleaseNotes from './components/ReleaseNotes.vue'
 import Reveal from './components/Reveal.vue'
@@ -39,7 +39,7 @@ const reasons = [
 <template>
   <Layout>
     <template #home-hero-after>
-      <HeroShot />
+      <DemoStage />
     </template>
 
     <template #home-features-before>
