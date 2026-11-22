@@ -12,8 +12,9 @@ import { demo, tools } from '../../data/site'
 import type { Point, BadgeMark, BoxObject, RectObject, HighlightObject, BlurObject, GlowObject, ArrowObject, TextObject, NumberObject, DemoObject, HandleId, HandleKey } from './demo/types'
 import { isBox, supportsGradient } from './demo/types'
 import { lerp, snapDirection, squareCorner, arrowPolyline, dist, distToSegment, distToPolyline, polylineLength, arrowBodyPath, arrowHead, freehandPath, textBox, boundsOf, numberRadius, badgeInk, badgeCheckPath, badgeCrossPath, numberHead, numberLeaderPath } from './demo/geometry'
-import { rgbToHsv, hsvToHex, strokePieces, faceDef, leaderDef } from './demo/paint'
+import { strokePieces, faceDef, leaderDef } from './demo/paint'
 import type { GradientDef, StrokePiece } from './demo/paint'
+import ColorPanel from './demo/ColorPanel.vue'
 
 const stage = demo.stage
 const swatch = demo.swatches.solid[0]
@@ -409,7 +410,7 @@ function onPointerDown(ev: PointerEvent): void {
   const target = ev.target as Element | null
   // 取色面板内部不参与框选；点舞台其他位置先收起面板
   if (target?.closest?.('.as-demo__color-panel')) return
-  if (panel.value) closePanel()
+  if (panelIndex.value !== null) closePanel()
   if (
     target?.closest?.(
       '.as-demo__toolbar, .as-demo__controls, .as-demo__badge-toggle, .as-demo__badge-menu, .as-demo__editor',
@@ -1048,7 +1049,7 @@ function onWindowKey(ev: KeyboardEvent): void {
 
   if (ev.key === 'Escape') {
     // 取色面板优先关；文字编辑框与徽标菜单各自处理 Esc，不在这里重复
-    if (panel.value) {
+    if (panelIndex.value !== null) {
       closePanel()
       ev.preventDefault()
       return
@@ -1097,24 +1098,14 @@ function selectSolid(color: string): void {
   o.gradient = null
 }
 
-/* ---------- 取色面板（toolbar/colorpanel：色相条 + SV 方块 + 12 个快捷色） ---------- */
+/* ---------- 取色面板（拆到 demo/ColorPanel.vue，这里只算定位） ---------- */
 
 /** 面板尺寸基准（100% DPI），窄屏不打开面板，所以固定按工具栏 115% 缩放 */
 const PANEL = { width: 208, pad: 8, gap: 8, hue: 14, sv: 104, swatch: 24, swatchGap: 8 }
 const PANEL_SCALE = 1.15
 
-interface ColorPanelState {
-  /** 正在改哪个纯色块 */
-  index: number
-  hue: number
-  sat: number
-  val: number
-  dragging: 'hue' | 'sv' | null
-}
-
-const panel = ref<ColorPanelState | null>(null)
-const hueEl = ref<HTMLElement | null>(null)
-const svEl = ref<HTMLElement | null>(null)
+/** 正在改哪个纯色块；null 表示面板关着 */
+const panelIndex = ref<number | null>(null)
 
 function panelHeight(): number {
   return (PANEL.pad * 2 + PANEL.hue + PANEL.gap + PANEL.sv + PANEL.gap + PANEL.swatch * 2 + PANEL.swatchGap) * PANEL_SCALE
@@ -1123,12 +1114,13 @@ function panelHeight(): number {
 /** 锚在被双击的色块上方，夹回舞台内 */
 const panelStyle = computed<Record<string, string>>(() => {
   const stage = stageEl.value
-  if (!panel.value || !stage) return {}
+  const index = panelIndex.value
+  if (index === null || !stage) return {}
   const box = stage.getBoundingClientRect()
   const w = PANEL.width * PANEL_SCALE
   const h = panelHeight()
   const anchors = stage.querySelectorAll('.as-demo__swatch')
-  const anchor = anchors[panel.value.index]?.getBoundingClientRect()
+  const anchor = anchors[index]?.getBoundingClientRect()
   const bar = stage.querySelector('.as-demo__toolbar')?.getBoundingClientRect()
   const cx = anchor ? anchor.left - box.left + anchor.width / 2 : box.width / 2
   const barTop = bar ? bar.top - box.top : box.height - 60
@@ -1144,98 +1136,20 @@ const panelStyle = computed<Record<string, string>>(() => {
   }
 })
 
-const panelColor = computed(() =>
-  panel.value ? hsvToHex(panel.value.hue, panel.value.sat, panel.value.val) : '',
-)
-
-/** SV 方块：白→纯色相横向、透明→黑纵向叠在一起（与软件自绘一致） */
-const svStyle = computed<Record<string, string>>(() => {
-  const p = panel.value
-  if (!p) return {}
-  return {
-    backgroundColor: hsvToHex(p.hue, 1, 1),
-    backgroundImage: 'linear-gradient(to top, #000, rgba(0,0,0,0)), linear-gradient(to right, #fff, rgba(255,255,255,0))',
-  }
-})
-
-const svMarkerStyle = computed<Record<string, string>>(() => {
-  const p = panel.value
-  if (!p) return {}
-  return { left: `${p.sat * 100}%`, top: `${(1 - p.val) * 100}%` }
-})
-
-const hueMarkerStyle = computed<Record<string, string>>(() => {
-  const p = panel.value
-  if (!p) return {}
-  return { left: `${(p.hue / 360) * 100}%` }
-})
-
 function openPanel(index: number): void {
-  const { h, s, v } = rgbToHsv(solidColors[index])
-  panel.value = { index, hue: h, sat: s, val: v, dragging: null }
+  panelIndex.value = index
 }
 
 function closePanel(): void {
-  if (!panel.value) return
-  panel.value = null
-  window.removeEventListener('pointermove', onPanelMove)
-  window.removeEventListener('pointerup', endPanelDrag)
+  panelIndex.value = null
 }
 
-/** 面板里的颜色实时写回该色块，并当成当前画笔用上 */
-function applyPanel(): void {
-  const p = panel.value
-  if (!p) return
-  const hex = hsvToHex(p.hue, p.sat, p.val)
-  solidColors[p.index] = hex
+/** 面板里改的颜色实时写回该色块，并当成当前画笔用上 */
+function onPanelColor(hex: string): void {
+  const index = panelIndex.value
+  if (index === null) return
+  solidColors[index] = hex
   selectSolid(hex)
-}
-
-function pickQuick(hex: string): void {
-  const p = panel.value
-  if (!p) return
-  const { h, s, v } = rgbToHsv(hex)
-  p.hue = h
-  p.sat = s
-  p.val = v
-  applyPanel()
-}
-
-function updatePanelFromPointer(ev: PointerEvent): void {
-  const p = panel.value
-  if (!p) return
-  const el = p.dragging === 'hue' ? hueEl.value : svEl.value
-  if (!el) return
-  const box = el.getBoundingClientRect()
-  const x = Math.min(Math.max((ev.clientX - box.left) / box.width, 0), 1)
-  const y = Math.min(Math.max((ev.clientY - box.top) / box.height, 0), 1)
-  if (p.dragging === 'hue') p.hue = x * 360
-  else {
-    p.sat = x
-    p.val = 1 - y
-  }
-  applyPanel()
-}
-
-function onPanelMove(ev: PointerEvent): void {
-  updatePanelFromPointer(ev)
-}
-
-function endPanelDrag(): void {
-  if (panel.value) panel.value.dragging = null
-  window.removeEventListener('pointermove', onPanelMove)
-  window.removeEventListener('pointerup', endPanelDrag)
-}
-
-function startPanelDrag(mode: 'hue' | 'sv', ev: PointerEvent): void {
-  const p = panel.value
-  if (!p) return
-  p.dragging = mode
-  updatePanelFromPointer(ev)
-  window.addEventListener('pointermove', onPanelMove)
-  window.addEventListener('pointerup', endPanelDrag)
-  ev.preventDefault()
-  ev.stopPropagation()
 }
 
 /** 点渐变色块：切到当前这一套；不支持渐变的对象（文本 / 荧光笔）只拿代表色 */
@@ -2115,46 +2029,14 @@ const statusText = computed(() => {
         </div>
       </div>
 
-      <div v-if="panel" class="as-demo__color-panel" :style="panelStyle" @pointerdown.stop>
-        <div
-          ref="hueEl"
-          class="as-demo__cp-hue"
-          role="slider"
-          aria-label="色相"
-          :aria-valuenow="Math.round(panel.hue)"
-          aria-valuemin="0"
-          aria-valuemax="360"
-          @pointerdown="startPanelDrag('hue', $event)"
-        >
-          <span class="as-demo__cp-mark" :style="hueMarkerStyle" />
-        </div>
-        <div
-          ref="svEl"
-          class="as-demo__cp-sv"
-          :style="svStyle"
-          role="slider"
-          aria-label="饱和度与明度"
-          @pointerdown="startPanelDrag('sv', $event)"
-        >
-          <span class="as-demo__cp-dot" :style="svMarkerStyle" />
-        </div>
-        <div class="as-demo__cp-quick">
-          <button
-            v-for="hex in demo.swatches.quick"
-            :key="hex"
-            type="button"
-            class="as-demo__cp-swatch"
-            :style="{ '--as-demo-swatch': hex }"
-            :aria-label="`快捷色 ${hex}`"
-            :title="hex"
-            @click="pickQuick(hex)"
-          />
-        </div>
-        <p class="as-demo__cp-preview" aria-live="polite">
-          <span class="as-demo__cp-chip" :style="{ '--as-demo-swatch': panelColor }" aria-hidden="true" />
-          {{ panelColor.toUpperCase() }}
-        </p>
-      </div>
+      <ColorPanel
+        v-if="panelIndex !== null"
+        :key="panelIndex"
+        :color="solidColors[panelIndex]"
+        :quick="demo.swatches.quick"
+        :panel-style="panelStyle"
+        @change="onPanelColor"
+      />
     </div>
 
     <p class="as-demo__hint">
