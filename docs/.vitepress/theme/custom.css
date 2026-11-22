@@ -1339,29 +1339,26 @@ button:focus-visible,
   color: var(--vp-c-text-1);
 }
 
+/* 窄屏只做静态展示：可玩文案与「重播 / 清空」按钮都收起，换成一句说明 */
+.as-demo__only-narrow {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .as-demo__stage {
     --as-demo-scale: 0.9;
   }
 
-  .as-demo__extra {
+  .as-demo__only-wide {
     display: none;
   }
 
-  /* 窄屏放不下跟随点位的标签，改成固定贴在工具栏上方左侧 */
-  .as-demo__pointer {
-    top: auto;
-    bottom: calc(56px * var(--as-demo-scale, 1.15) + 16px);
-    left: 12px;
-    max-width: 150px;
-    white-space: normal;
-    transform: none;
+  .as-demo__only-narrow {
+    display: inline;
   }
 
-  .as-demo__caption {
-    padding: 7px 14px;
-    font-size: 14px;
-    white-space: normal;
+  .as-demo__extra {
+    display: none;
   }
 
   .as-demo__doc {
@@ -1382,6 +1379,34 @@ button:focus-visible,
     margin-top: 10px;
     padding-top: 8px;
     font-size: 10px;
+  }
+}
+
+/*
+ * 窄屏工具栏字号：移动 + 10 个工具在 100% 下要 356px（site.ts 的 toolbar 常量算出），
+ * 而舞台宽 = 视口 − 48 内边距 − 15 滚动条。逐档压小，每档都按该档最窄视口验算过（见 progress.md）。
+ */
+@media (max-width: 392px) {
+  .as-demo__stage {
+    --as-demo-scale: 0.85;
+  }
+}
+
+@media (max-width: 374px) {
+  .as-demo__stage {
+    --as-demo-scale: 0.8;
+  }
+}
+
+@media (max-width: 354px) {
+  .as-demo__stage {
+    --as-demo-scale: 0.74;
+  }
+}
+
+@media (max-width: 339px) {
+  .as-demo__stage {
+    --as-demo-scale: 0.7;
   }
 }
 

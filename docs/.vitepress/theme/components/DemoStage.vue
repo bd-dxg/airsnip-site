@@ -137,7 +137,23 @@ function isBox(o: DemoObject): o is RectObject | EllipseObject | HighlightObject
 
 let nextId = 1
 
-const objects = reactive<DemoObject[]>([])
+/** 首帧矩形：SSR 直接把它写进 HTML，无 JS / 窄屏看到的就是这张「成品」 */
+function staticRect(): RectObject {
+  return {
+    id: nextId++,
+    kind: 'rect',
+    x: demo.initialRect.x,
+    y: demo.initialRect.y,
+    width: demo.initialRect.width,
+    height: demo.initialRect.height,
+    radius: demo.staticFrame.radius,
+    stroke: demo.staticFrame.stroke,
+    color: swatch,
+    filled: false,
+  }
+}
+
+const objects = reactive<DemoObject[]>([staticRect()])
 const selectedId = ref<number | null>(null)
 const selected = computed<DemoObject | null>(
   () => objects.find((item) => item.id === selectedId.value) ?? null,
@@ -702,6 +718,8 @@ const draggingMode = ref<DragMode | null>(null)
 const hoverCursor = ref<string | null>(null)
 
 const cursor = computed(() => {
+  // 窄屏是静态展示，别给「可以拖」的光标暗示
+  if (narrow.value) return 'default'
   if (draggingMode.value === 'move') return 'grabbing'
   if (hoverCursor.value) return hoverCursor.value
   return activeTool.value === 'move' ? 'default' : 'crosshair'
@@ -739,6 +757,7 @@ function beginDrag(state: Omit<DragState, 'box'> & { box: DOMRect | null }, ev: 
 }
 
 function onPointerDown(ev: PointerEvent): void {
+  if (narrow.value) return
   if (
     (ev.target as Element | null)?.closest?.(
       '.as-demo__toolbar, .as-demo__controls, .as-demo__badge-toggle, .as-demo__badge-menu, .as-demo__editor',
@@ -1326,6 +1345,7 @@ function adjustDefault(tool: string, delta: number): boolean {
 
 /** 滚轮：悬停在对象上改它，空白处只改下一次绘制的默认值（wheel.rs） */
 function onWheel(ev: WheelEvent): void {
+  if (narrow.value) return
   if (ev.deltaY === 0) return
   const point = stagePoint(ev, measure())
   if (!point) return
@@ -1342,6 +1362,7 @@ function onWheel(ev: WheelEvent): void {
 
 /** 键盘也能改圆角：圆点可以 Tab 到，方向键增减 */
 function onGripKey(ev: KeyboardEvent): void {
+  if (narrow.value) return
   const o = selected.value
   if (!o || !hasCorner(o)) return
   const value = cornerValue(o)
@@ -1382,7 +1403,7 @@ function toggleFill(): void {
 }
 
 function updateHover(ev: PointerEvent): void {
-  if (playing.value) {
+  if (playing.value || narrow.value) {
     hoverCursor.value = null
     return
   }
@@ -1414,7 +1435,19 @@ const { inView } = useInView(stageEl)
 const { reduced: reducedMotion } = useReducedMotion()
 /** 正在自动演示：此时才给矩形加过渡，平时拖拽是即时的 */
 const playing = ref(false)
+/** 水化前不渲染手柄 / 圆角柄，否则无 JS 的首屏是「看着能玩、其实不能」的假界面 */
+const hydrated = ref(false)
+/** 窄屏只做静态展示：画布只有约 200px 高，拖着看不清，滚轮也会跟页面滚动打架 */
+const narrow = ref(false)
+const NARROW_QUERY = '(max-width: 767px)'
+let narrowMql: MediaQueryList | null = null
 let timers: number[] = []
+
+/** 窄屏拉宽后补播一次（窄屏期间 played 没置位，所以能播） */
+function onNarrowChange(ev: MediaQueryListEvent): void {
+  narrow.value = ev.matches
+  if (!ev.matches) void autoplay()
+}
 
 function clearTimers(): void {
   timers.forEach((id) => window.clearTimeout(id))
@@ -1438,15 +1471,17 @@ function makeDemoRect(): RectObject {
 
 async function autoplay(): Promise<void> {
   if (played) return
+  // 窄屏不演：首帧那张成品就是最终效果，不置 played，拉宽窗口时还能补播
+  if (narrow.value) return
   played = true
-  // 系统开了「减少动态效果」：不演，直接把提示放出来
+  // 系统开了「减少动态效果」：不演，直接用手上的成品帧，把手柄和引导亮出来
   if (reducedMotion.value) {
-    objects.splice(0, objects.length, makeDemoRect())
-    const rect = objects[0] as RectObject
+    const rect = objects.find((item): item is RectObject => item.kind === 'rect')
+    if (!rect) return
     rect.width = demo.initialRect.width
     rect.height = demo.initialRect.height
-    rect.radius = Math.min(24, Math.min(rect.width, rect.height) / 2)
-    rect.stroke = 6
+    rect.radius = Math.min(demo.staticFrame.radius, Math.min(rect.width, rect.height) / 2)
+    rect.stroke = demo.staticFrame.stroke
     selectedId.value = rect.id
     guide.value = 'radius'
     return
@@ -1487,7 +1522,7 @@ async function autoplay(): Promise<void> {
   timers.push(
     window.setTimeout(() => {
       if (aborted) return
-      rect.radius = Math.min(24, Math.min(rect.width, rect.height) / 2)
+      rect.radius = Math.min(demo.staticFrame.radius, Math.min(rect.width, rect.height) / 2)
     }, 2000),
   )
 
@@ -1501,7 +1536,7 @@ async function autoplay(): Promise<void> {
   timers.push(
     window.setTimeout(() => {
       if (aborted) return
-      rect.stroke = 6
+      rect.stroke = demo.staticFrame.stroke
     }, 3800),
   )
 
@@ -1553,7 +1588,13 @@ function clearAll(): void {
 }
 
 onMounted(() => {
+  hydrated.value = true
   coarsePointer.value = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
+  if (typeof matchMedia === 'function') {
+    narrowMql = matchMedia(NARROW_QUERY)
+    narrow.value = narrowMql.matches
+    narrowMql.addEventListener('change', onNarrowChange)
+  }
   const el = stageEl.value
   if (!el) return
   stageWidthPx.value = el.clientWidth || stage.width
@@ -1568,6 +1609,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimers()
   endDrag()
+  narrowMql?.removeEventListener('change', onNarrowChange)
+  narrowMql = null
   resizeObserver?.disconnect()
   resizeObserver = null
 })
@@ -1859,7 +1902,7 @@ const statusText = computed(() => {
         </template>
 
         <g
-          v-if="handles.length && !playing"
+          v-if="hydrated && handles.length && !playing"
           class="as-demo__frame"
           :stroke="demo.frame.accent"
           :stroke-width="demo.frame.lineWidth"
@@ -1905,7 +1948,7 @@ const statusText = computed(() => {
         </g>
 
         <circle
-          v-if="grip && !playing"
+          v-if="hydrated && grip && !playing"
           :class="['as-demo__grip', { 'is-dragging': draggingMode === 'radius' }]"
           :cx="grip.x"
           :cy="grip.y"
@@ -2026,8 +2069,8 @@ const statusText = computed(() => {
             深色
           </button>
         </div>
-        <button type="button" class="as-demo__reset" @click="resetDemo">重播演示</button>
-        <button type="button" class="as-demo__reset" @click="clearAll">清空</button>
+        <button type="button" class="as-demo__reset as-demo__only-wide" @click="resetDemo">重播演示</button>
+        <button type="button" class="as-demo__reset as-demo__only-wide" @click="clearAll">清空</button>
       </div>
 
       <div class="as-demo__toolbar" role="toolbar" aria-label="标注工具栏（演示）" @keydown="onToolbarKey">
@@ -2126,14 +2169,19 @@ const statusText = computed(() => {
     </div>
 
     <p class="as-demo__hint">
-      <template v-if="activeTool === 'rect'">
-        拖右上角的小圆点改圆角、拖八个白方块缩放；想移动就先点最左边的「移动」再拖，在矩形上滚滚轮调线宽（按住 Ctrl 三倍步进）。
-        右上角还能切软件的浅色 / 深色主题（软件里另有「跟随系统」）。
-      </template>
-      <template v-else-if="activeTool === 'move'">
-        点任意标注选中它，拖一下整体移动；换工具继续画，画完还能拖控制点改。
-      </template>
-      <template v-else> {{ demo.toolHints[activeTool] }}，在舞台上试一试。 </template>
+      <span class="as-demo__only-wide">
+        <template v-if="activeTool === 'rect'">
+          拖右上角的小圆点改圆角、拖八个白方块缩放；想移动就先点最左边的「移动」再拖，在矩形上滚滚轮调线宽（按住 Ctrl 三倍步进）。
+          右上角还能切软件的浅色 / 深色主题（软件里另有「跟随系统」）。
+        </template>
+        <template v-else-if="activeTool === 'move'">
+          点任意标注选中它，拖一下整体移动；换工具继续画，画完还能拖控制点改。
+        </template>
+        <template v-else> {{ demo.toolHints[activeTool] }}，在舞台上试一试。 </template>
+      </span>
+      <span class="as-demo__only-narrow">
+        窄屏只展示效果；在电脑上用鼠标打开，就能亲手拖圆角、滚滚轮调线宽。
+      </span>
       <a class="as-demo__doc-link" href="/guide/features">全部标注工具 →</a>
       <span v-if="statusText" class="as-demo__state">{{ statusText }}</span>
     </p>

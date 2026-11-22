@@ -588,6 +588,12 @@ export const demo = {
   /** 演示台的初始矩形（舞台坐标）：框住卡片里的日志区，不切到标题与 URL 行 */
   initialRect: { x: 344, y: 252, width: 432, height: 200 },
 
+  /**
+   * 演示终态，也是首帧静态帧的参数（圆角与线宽都在软件范围内）。
+   * 无 JS 与窄屏就停在这一次结果上，宽屏的自动演示也收在这一帧。
+   */
+  staticFrame: { radius: 24, stroke: 6 },
+
   /** 第一行工具栏里工具之外的元素，顺序与 toolbar::layout 的组分一致 */
   actions: {
     move: { name: '移动', icon: 'move', hint: 'V' },
