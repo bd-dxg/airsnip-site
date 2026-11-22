@@ -49,14 +49,16 @@ docs/
 ├─ download.md               # 下载
 ├─ guide/                    # 快速上手 / 功能详解 / 快捷键 / 常见问题
 ├─ about/                    # 性能数据与口径 / 隐私说明 / 开源与许可
-├─ public/                   # images/、favicon.svg、robots.txt
+├─ public/                   # images/、demo/icons/（演示台工具栏图标）、favicon.svg、robots.txt
 └─ .vitepress/
    ├─ config.mts             # 站点与主题配置
    ├─ env.d.ts               # *.vue 类型声明
-   ├─ data/site.ts           # 所有产品事实（数字、工具、快捷键、截图元数据）
+   ├─ data/site.ts           # 所有产品事实（数字、工具、快捷键、截图元数据、演示台参数）
    ├─ composables/           # useInView / useReducedMotion
    └─ theme/                 # Layout、custom.css、components/
 ```
+
+首页首屏是一块可玩的矢量演示台（`components/DemoStage.vue`），不是截图：工具栏与 10 个标注工具按软件源码 1:1 复刻，几何与色值全在 `site.ts` 的 `demo` 块，图标从软件仓库 `assets/icons/ui/toolbar` 复制。复刻规则见 spec 第 10.1 节。
 
 ## 如何更换版本号与下载线路
 
@@ -100,3 +102,5 @@ https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-
    - 版本号取 `v0.8.1`（文档写的是 `v0.5.0`）。
    - 标注工具键序按「快捷键」页截图：`4 = 高斯模糊`、`5 = 荧光笔`（文档 2.5 / 2.6 写的是荧光笔 4、模糊 5）。
    - 下载卡片主按钮指向国内加速线路（文档要求主按钮指向 `DOWNLOAD_URL` 官方地址），官方地址作为副按钮并列展示。
+6. **演示台后续项**：`DemoStage.vue` 已 2800 行，待拆到 `theme/components/demo/` 下（类型 / 几何 / 渲染 / 交互分开），拆分前先跑一遍 CDP 回归。线型（虚线 / 点划线）、撤销 / 重做、贴图、长截图、复制 / 快存 / 保存仍是装饰按钮，未接行为。
+7. **`AudienceCards`（适合谁）已从首页下线**，组件与 `audiences` 数据保留，位置待定（可能并进 `guide/features.md`）。

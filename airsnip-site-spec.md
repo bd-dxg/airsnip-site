@@ -163,7 +163,7 @@
 
 | 作者的文件 | 目标文件名 | 用途 |
 |---|---|---|
-| 主图.jpg | `hero.jpg` | 首页 `HeroShot`；`og:image` |
+| 主图.jpg | `hero.webp`（1329×692） | 首页 `ProductTour` 首张「覆盖层」；`og:image` |
 | 通用界面.jpg | `general.jpg` | `ProductTour` 标签页 1；功能页「截图 / 标注」 |
 | 快捷键界面.jpg | `shortcuts.jpg` | `ProductTour` 标签页 2；快捷键页顶部 |
 | 保存界面.jpg | `save.jpg` | `ProductTour` 标签页 3；功能页「输出」 |
@@ -172,7 +172,7 @@
 
 处理规则：
 - **先逐张查看图片**，读取真实宽高写进 `<img width height>`；`alt` 与图注只描述图中**可见**的内容，看不清的写 `TODO:`，不要臆测界面细节。
-- 不裁剪、不加水印、不改内容；不生成任何假截图。
+- 不裁剪、不加水印、不改内容；不生成任何假截图。首屏的可玩演示台不在此列，它是按源码复刻的矢量界面，规则见第 15 节。
 - 单张超过约 400 KB 时，只在 `README.md` 的 TODO 里提示作者压缩，**不要为此引入图片处理依赖**。
 - 不新增赞助页、收款码或赞助文案；赞助信息仅以 `about.jpg` 原图形式出现。
 
@@ -182,7 +182,7 @@
 
 - **框架**：VitePress（最新稳定版）+ Vue 3，所有组件 `<script setup lang="ts">`，TS `strict: true`，禁止 `any`。
 - **包管理器**：pnpm。脚本只保留 `dev` / `build` / `preview`。
-- **依赖**：除 `vitepress`、`vue`、`typescript` 外**不引入任何 UI 库 / CSS 框架 / 动画库**。动效统一用「原生 CSS（transition / keyframes / scroll 相关）+ IntersectionObserver + Vue `<Transition>`」实现，这三样足以覆盖第 8 节全部效果，且零依赖。
+- **依赖**：除 `vitepress`、`vue`、`typescript` 外**不引入任何 UI 库 / CSS 框架 / 动画库**。动效统一用「原生 CSS（transition / keyframes / scroll 相关）+ IntersectionObserver + Vue `<Transition>`」实现，这三样足以覆盖第 8 节全部效果，且零依赖。演示台同样零新增依赖（只用 SVG + 指针事件）；曾经引入过 `motion-v`，因为一直没用上已经移除。
 - **配置**：极简，不写无用的可选项。
 - **格式 / lint**：如项目已有 oxfmt / oxlint 则沿用，否则不额外添加。
 - **网络**：纯静态站点，**不发起任何第三方请求**（无统计、无网络字体、无 CDN、无 GitHub API）。
@@ -209,7 +209,8 @@ airsnip-site/
    │  ├─ privacy.md               # 隐私说明
    │  └─ license.md               # 开源与许可（含 about.jpg）
    ├─ public/
-   │  ├─ images/                  # 第 2.10 节的 6 张截图
+   │  ├─ images/                  # 第 2.10 节的 7 张截图（含覆盖层首图）
+   │  ├─ demo/icons/              # 演示台工具栏图标，从软件仓库 assets/icons/ui/toolbar 原样复制
    │  ├─ favicon.svg
    │  └─ robots.txt
    └─ .vitepress/
@@ -226,11 +227,12 @@ airsnip-site/
          └─ components/
             ├─ Reveal.vue
             ├─ CountUp.vue
-            ├─ HeroShot.vue
+            ├─ DemoStage.vue         # 首屏可玩演示台（工具栏 + 10 个标注工具）
+            ├─ Capabilities.vue      # 首页「标注分三组」
             ├─ StatsGrid.vue
-            ├─ ToolShowcase.vue
+            ├─ ToolShowcase.vue      # 仅文档页内嵌（首页已下线）
             ├─ ProductTour.vue
-            ├─ AudienceCards.vue
+            ├─ AudienceCards.vue     # 首页已下线，组件保留
             ├─ ShortcutTable.vue
             └─ DownloadCard.vue
 ```
@@ -248,9 +250,10 @@ export interface Stat {
 }
 
 export interface Tool {
-  key: string          // '1'..'6'
+  key: string          // '1'..'9' / '0'
   name: string
   description: string
+  icon: string         // 演示台图标名，对应 public/demo/icons/<icon>.svg
 }
 
 export interface Shortcut {
@@ -264,25 +267,40 @@ export interface Audience {
   description: string
 }
 
+/** 首页「标注分三组」的三行 */
+export interface Capability {
+  index: string        // 序号
+  title: string
+  text: string
+  keys: string         // 演示台里对应的按键，如 '1 / 2 / 8'
+}
+
 export interface Screenshot {
-  id: 'general' | 'shortcuts' | 'save' | 'appearance' | 'about'
-  title: string        // 标签页名：通用 / 快捷键 / 保存 / 外观 / 关于
+  id: 'overlay' | 'general' | 'toolbar' | 'shortcuts' | 'save' | 'appearance' | 'about'
+  title: string        // 标签页名：覆盖层 / 通用 / 工具栏 / 快捷键 / 保存 / 外观 / 关于
   caption: string      // 只描述图中可见内容；看不清写 TODO
-  src: string          // '/images/general.jpg'
+  src: string          // '/images/general.webp'
   width: number        // 真实宽
   height: number       // 真实高
 }
 
 export const REPO_URL = 'https://github.com/bd-dxg/airsnip'
 export const RELEASES_URL = `${REPO_URL}/releases`
-export const DOWNLOAD_URL = RELEASES_URL // TODO: 作者提供下载直链后替换
-export const VERSION = 'v0.5.0'          // 由作者维护
+export const DOWNLOAD_URL = `${RELEASES_URL}/download/${VERSION}/${ASSET_NAME}`
+export const VERSION = 'v0.14.0'          // 由作者维护
 
 export const stats: Stat[] = [/* 第 2.2 节 6 项 */]
-export const tools: Tool[] = [/* 第 2.5 节 6 个工具 */]
+export const tools: Tool[] = [/* 第 2.5 节 10 个工具 */]
 export const shortcuts: Shortcut[] = [/* 第 2.6 节 */]
 export const audiences: Audience[] = [/* 第 2.4 节 4 项 */]
-export const screenshots: Screenshot[] = [/* 第 2.10 节：general / shortcuts / save / appearance / about */]
+export const screenshots: Screenshot[] = [/* 第 2.10 节 7 张，首张覆盖层 */]
+export const capabilities: Capability[] = [/* 第 9 节首页三行 */]
+
+/**
+ * 演示台用的真实参数（第 10.1 节）：调色板、工具栏几何、手柄、滚轮、
+ * 色板与渐变色标、取色面板尺寸……每项都在注释里标注软件源码出处。
+ */
+export const demo = { /* ... */ }
 ```
 
 **不要**在数据层放「已知限制」相关内容。
@@ -293,7 +311,7 @@ export const screenshots: Screenshot[] = [/* 第 2.10 节：general / shortcuts 
 
 - `title: 'AirSnip 轻截'`，`description` 取第 2.1 节一句话。
 - `cleanUrls: true`、`lastUpdated: true`、`appearance: false`（仅浅色，无深色模式）。
-- `head`：favicon、`theme-color`、Open Graph（`og:image` 用 hero.jpg）、`twitter:card`。域名用环境变量 `SITE_URL`，未设置时跳过 `og:url` 与 sitemap，**不要写死域名**。
+- `head`：favicon、`theme-color`、Open Graph（`og:image` 用 `hero.webp`）、`twitter:card`。域名用环境变量 `SITE_URL`，未设置时跳过 `og:url` 与 sitemap，**不要写死域名**。
 - `sitemap: { hostname: process.env.SITE_URL }`（仅在设置时启用）。
 - `themeConfig`：
   - `nav`：快速上手 / 功能 / 快捷键 / 常见问题 / 下载；`socialLinks` 放 GitHub。
@@ -322,8 +340,11 @@ export default {
 
 包裹 `DefaultTheme.Layout`，用插槽组装首页：
 
-- `home-hero-after` → `<HeroShot />`
+- `home-hero-after` → `<DemoStage />`（可玩的矢量演示台，不依赖截图）
+- `home-features-before` → `<ReleaseNotes />`（本次更新）
 - `home-features-after` → 按 8.1 的顺序放置其余首页区块
+
+`index.md` 不再声明 `features`：VitePress 原生的六列卡片区已下线，换成 `Capabilities.vue` 的三行大字区块。
 
 ## 7. 组件规格
 
@@ -333,11 +354,12 @@ export default {
 |---|---|---|
 | `Reveal` | 滚动进入视口时淡入上移的通用包裹 | props：`delay?: number`（ms）、`as?: string`。逻辑见 8.2 |
 | `CountUp` | 数字滚动到目标值 | props：`value: string`、`duration?: number`。逻辑见 8.3 |
-| `HeroShot` | 首页主图展示 | 用 `hero.jpg`；窗口式边框（圆角 + 细边框 + 柔和阴影）；入场动效见 8.1；图注取「按 F1 后的样子：屏幕冻结、框选任意区域，底部一行就是全部标注工具」 |
+| `DemoStage` | 首屏可玩演示台 | 按软件源码 1:1 重绘工具栏与 10 个标注工具：拖拽、缩放、圆角、滚轮线宽、颜色 / 渐变、徽标形态；自动演示 + 两步引导；参数全在 `site.ts` 的 `demo` 块。规范见 10.1 |
+| `Capabilities` | 首页「标注分三组」 | 三行大字：序号 / 标题 / 一句说明 / 「在演示台按 1 / 2 / 8 试试」；数据取 `capabilities` |
 | `StatsGrid` | 6 个关键数字 | 桌面 3×2、平板 2×3、手机 1 列；数字用 `CountUp`；卡片用 `Reveal` 错峰；底部脚注 + 「查看实测方法」链接到 `/about/performance` |
-| `ToolShowcase` | 6 个标注工具 | 卡片网格；每张含工具名、描述、对应数字键 `<kbd>`；悬停效果见 8.5 |
-| `ProductTour` | 产品界面标签页 | 5 个标签（通用 / 快捷键 / 保存 / 外观 / 关于）；见 8.4 |
-| `AudienceCards` | 4 张「适合谁」卡片 | 取 `audiences`；`Reveal` 错峰 |
+| `ToolShowcase` | 6 个标注工具 | 卡片网格；每张含工具名、描述、对应数字键 `<kbd>`；**首页已下线**，只在 `guide/features.md` 内嵌（`show-heading="false"`） |
+| `ProductTour` | 产品界面标签页 | 7 个标签（覆盖层 / 通用 / 工具栏 / 快捷键 / 保存 / 外观 / 关于）；容器比例锁首张 1329:692，切图不跳高；见 8.4 |
+| `AudienceCards` | 4 张「适合谁」卡片 | 取 `audiences`；`Reveal` 错峰。**首页已下线**，组件保留待定位置 |
 | `ShortcutTable` | 快捷键表 | props：`scope?`；按键用 `<kbd>`；窄屏表格容器 `overflow-x: auto` |
 | `DownloadCard` | 下载入口 | 主按钮链接 `DOWNLOAD_URL`（`rel="noopener"`）；旁边显示 `VERSION`、`Windows x64 · 绿色免安装 · 约 0.62 MB`；副链接「在 GitHub 查看全部版本」→ `RELEASES_URL`。**不请求任何接口，不展示任何限制类文案** |
 
@@ -347,17 +369,18 @@ export default {
 
 ### 8.0 全局规则
 
-- **只动画 `transform` 与 `opacity`**；不动画 `width` / `height` / `top` / `left` / `box-shadow` 的大幅变化；`will-change` 只在动画进行中临时加，不常驻。
+- **页面级入场动效只动 `transform` 与 `opacity`**；不动画 `width` / `height` / `top` / `left` / `box-shadow` 的大幅变化；`will-change` 只在动画进行中临时加，不常驻。
+- **例外：演示台内部**。它复刻的是软件实时交互，允许三类过渡：① SVG 属性动画（自动演示画矩形时的 `width` / `height` / `rx` / `stroke-width`）；② 颜色与背景色过渡（演示台切浅色 / 深色主题、工具栏悬停）；③ 拖拽期间的即时位移（只改 `transform` 或 SVG 坐标，不加过渡）。这些都在一个组件的固定区域内，不会引发页面回流。
 - 动效 token 写进 `custom.css` 的 `:root`：`--motion-fast: 160ms`、`--motion-base: 360ms`、`--motion-slow: 640ms`、`--ease-out: cubic-bezier(0.22, 1, 0.36, 1)`。
-- **`prefers-reduced-motion: reduce`**：全局关闭 transition / animation，`Reveal` 直接显示，`CountUp` 直接显示终值。CSS 里用媒体查询兜底，JS 里用 `useReducedMotion()` 判断。
+- **`prefers-reduced-motion: reduce`**：全局关闭 transition / animation，`Reveal` 直接显示，`CountUp` 直接显示终值，**演示台不播自动演示**（直接给出成品帧 + 手柄与引导）。CSS 里用媒体查询兜底，JS 里用 `useReducedMotion()` 判断。
 - **不能出现「内容先消失再出现」的闪烁**：SSR 输出的 HTML 里内容必须是可见的；只有挂载后判断元素**在视口下方**时，才把它切换为「待入场」状态再观察（首屏内的元素保持可见，不重播）。无 JS 时内容完整可见。
 - 单次页面所有动画总数克制，不做无限循环的炫技动画。
 
 ### 8.1 首页入场与整体节奏
 
 - Hero 文案：`name` → `text` → `tagline` → `actions` 依次淡入上移（`translateY(12px) → 0`，间隔约 80ms，每项 ~600ms）。用**纯 CSS keyframes + `animation-fill-mode: both`** 实现，不依赖 JS，不会闪烁。
-- `HeroShot`：淡入 + 轻微放大（`scale(0.98) → 1`）+ 上移，延迟约 240ms，同样用纯 CSS。
-- 首页自上而下：Hero → HeroShot → features（VitePress 原生）→ `StatsGrid` → 「为什么能这么小」一段文字（第 2.3 节）→ `ProductTour` → `ToolShowcase` → `AudienceCards` → 「开源」简介（GPL-3.0、仓库链接、第三方声明，纯文字）→ `DownloadCard`。
+- `DemoStage`（首屏可玩演示台）：进入视口后自动演示一次（画框 → 拉圆角 → 调线宽，约 5 秒，配三条字幕），结束后交出手柄与两步引导；用户可以随时接手。
+- 首页自上而下：Hero → 演示台 → 本次更新 → `StatsGrid` → `Capabilities`（标注分三组）→ 「为什么能这么小」一段文字（第 2.3 节）→ `ProductTour` → 「开源」简介（GPL-3.0、仓库链接、第三方声明，纯文字）→ `DownloadCard`。
 - 每个区块标题与内容用 `Reveal` 包裹，同一区块内子项按 `--i`（序号）错峰 60–80ms。
 
 ### 8.2 `Reveal` 滚动入场
@@ -376,8 +399,9 @@ export default {
 ### 8.4 产品截图区
 
 **`ProductTour`**
-- 顶部是 5 个标签（`role="tablist"`，键盘左右键切换），下方是截图展示窗口（带窗口式边框）。
-- 切换使用 Vue `<Transition mode="out-in">`：旧图淡出 + 轻微位移，新图淡入，总时长约 `--motion-base`；容器高度由 `aspect-ratio`（取该图 `width/height`）固定，**切换时不得产生布局跳动**。
+- 顶部是 7 个标签（`role="tablist"`，键盘左右键切换），下方是截图展示窗口（带窗口式边框）；首张是覆盖层（`hero.webp`），其余为设置页。
+- 容器比例固定为**首张（1329:692）**，图片 `object-fit: contain`：设置页截图两侧留白，切图时高度不跳。
+- 切换使用 Vue `<Transition mode="out-in">`：旧图淡出 + 轻微位移，新图淡入，总时长约 `--motion-base`；容器高度由**首张**的 `aspect-ratio` 固定，**切换时不得产生布局跳动**。
 - 每个标签下方显示该图 `caption`。
 - 图片首个标签 `loading="eager"`，其余在首次进入视口后再加载。
 - 「外观」标签：图为软件设置里的「外观」页，图注只说明图中可见内容及「支持跟随系统切换主题」这一事实，不添加其他未经确认的外观功能描述。
@@ -396,9 +420,13 @@ export default {
 
 ### 首页 `index.md`（`layout: home`）
 
-- `hero.name`: `AirSnip`；`hero.text`: `1 MB 的 Windows 截图标注工具`；`hero.tagline`: `常驻内存 1.2 MB、待机 0% CPU、按热键 0.12 秒出画面。标注、长截图、贴图，功能一样不少。`
+- `hero.name`: `AirSnip`；`hero.text`: `1 MB 的 Windows 截图标注工具`；`hero.tagline`: `单文件 1.5 MB、待机 0% CPU、按热键 0.12 秒出画面。标注、长截图、贴图，功能一样不少。`
 - `hero.actions`：主按钮「下载」→ `/download`；次按钮「快速上手」→ `/guide/getting-started`；第三个「GitHub」→ 仓库。
-- `features`（6 项，VitePress 原生）：截图 / 标注 / 二次编辑 / 长截图 / 贴图 / 输出，每项一句话取自第 2.5 节，链接到 `/guide/features#...`。
+- **frontmatter 不再写 `features`**：VitePress 原生六张卡片已下线，换成 `Capabilities.vue` 的三行区块：
+  1. 一拖就成形 —— 矩形、椭圆、箭头、直线、手绘，箭头能拽成 S 形曲线（演示台按 1 / 2 / 8）
+  2. 写上去还能改 —— 文本、序号徽标、二次编辑，圆角线宽当场调（演示台按 3 / 7 / V）
+  3. 该糊的糊住 —— 高斯模糊、荧光笔、聚光灯（演示台按 4 / 5 / 6）
+- 截图、长截图、贴图、输出四项的详细介绍留在 `guide/features.md`，不再占首页位置。
 
 ### 各文档页
 
@@ -414,17 +442,34 @@ export default {
 ## 10. 视觉方向
 
 - **气质**：工具型、轻、克制、偏技术。大留白，不用渐变光球、玻璃拟态、霓虹等泛滥元素。
-- **配色**：从 `hero.jpg` 取一个强调色，覆盖 `--vp-c-brand-1/2/3` 与 `--vp-c-brand-soft`；核对对比度（正文 ≥ 4.5:1）。
+- **版式**：内容宽 1120px（`.as-section` 与 `.as-demo` 同宽，左边界对齐）；分区间距 96 / 128 / 160px（窄 / 中 / 宽）；分区标题 `clamp(30px, 3.4vw, 40px)`；Hero 主标题 72px / 行高 0.95、副标题 48px。
+- **配色**：从 `hero.webp` 取一个强调色，覆盖 `--vp-c-brand-1/2/3` 与 `--vp-c-brand-soft`；核对对比度（正文 ≥ 4.5:1）。
 - **字体**：系统字体栈，**不加载网络字体**；等宽用于按键与命令。
 - **截图边框**：统一的「窗口框」样式（圆角、1px 边框、柔和阴影），抽成公共 class。
 - **`<kbd>`**：统一样式（圆角、1px 边框、轻微底部阴影），在 `custom.css` 全局定义。
+
+### 10.1 演示台（矢量界面复刻规范）
+
+演示台不是截图，也不是凭空画的 mock。它只允许照源码复刻，规则：
+
+- **几何、色值、参数只能从软件源码取**，并全部写进 `site.ts` 的 `demo` 块，组件里不得另写一份。映射关系：
+  - 调色板 → `src/theme/mod.rs`
+  - 工具栏几何 → `src/overlay/toolbar/mod.rs`
+  - 手柄、圆角柄、命中半径 → `src/overlay/objedit/`、`src/overlay/pick/`
+  - 滚轮范围与步进 → `src/overlay/wheel.rs`
+  - 渐变色标 → `src/editor/gradient.rs` + `oklab.rs`（8 色标、色相 360° 闭合，色值由公式算出，不得手改）
+  - 取色面板尺寸与快捷色 → `src/overlay/toolbar/colorpanel/`、`src/editor/palette.rs`
+- **图标从软件仓库原样复制**（`assets/icons/ui/toolbar/*.svg`，Material Symbols，Apache-2.0），用 CSS mask 上色，不重画、不改形状。
+- **不演示软件已知限制**；演示范围只写到首页能讲清楚的程度，其余功能链到文档页。
+- **窄屏是静态成品帧**：≤767px 不播自动演示、不接管指针与键盘，只展示一张最终效果 + 一句「窄屏只展示效果」。
+- **可访问性**：舞台可获得焦点（`tabindex`），数字键切工具、V 回移动、Esc 取消选中；`prefers-reduced-motion` 下不播演示，直接给成品帧 + 手柄。
 
 ## 11. SEO、可访问性、性能
 
 - 每页有唯一 `title` / `description`（frontmatter）。
 - 所有图片有 `alt`；按钮 / 链接有可见焦点样式；颜色不作为唯一信息载体；标签页遵循 WAI-ARIA tabs 模式。
 - 首页 Lighthouse（移动端）目标：Performance ≥ 90、Accessibility ≥ 95、SEO ≥ 95（截图较多，Performance 略放宽）。
-- 首屏只加载 `hero.jpg`；其余截图懒加载；JS 体积不额外引入依赖。
+- 首屏只加载 `hero.webp`（`ProductTour` 首张，`loading="eager"`）；其余截图懒加载；JS 体积不额外引入依赖（演示台零新增依赖）。
 - `robots.txt` 允许全部抓取；设置了 `SITE_URL` 时附 sitemap 地址。
 
 ## 12. 部署（产出静态文件即可）
@@ -440,24 +485,26 @@ export default {
 2. 把作者截图放入 `docs/public/images/` 并按 2.10 重命名，读取真实宽高。
 3. 写 `data/site.ts`，逐项对照第 2 节核对数字。
 4. 写 `config.mts`、`theme/index.ts`、`Layout.vue`、`custom.css`（含动效 token 与 hero 入场 keyframes）。
-5. 写 `useInView`、`useReducedMotion`、`Reveal`、`CountUp`，再写 `HeroShot`、`StatsGrid`，让首页先跑通。
-6. 补齐 `ProductTour`、`ToolShowcase`、`AudienceCards`、`ShortcutTable`、`DownloadCard`。
-7. 写所有 Markdown 页面。
-8. 跑 `pnpm build` + `pnpm preview`，按第 14 节验收。
-9. 写 `README.md`。
+5. 写 `useInView`、`useReducedMotion`、`Reveal`、`CountUp`，再写 `Capabilities`、`StatsGrid`，让首页先跑通。
+6. 写 `DemoStage`（先矩形，再补齐 10 个工具、颜色与渐变、取色面板）。
+7. 补齐 `ProductTour`、`ToolShowcase`、`AudienceCards`、`ShortcutTable`、`DownloadCard`。
+8. 写所有 Markdown 页面。
+9. 跑 `pnpm build` + `pnpm preview`，按第 14 节验收。
+10. 写 `README.md`。
 
 ## 14. 验收清单
 
 - [ ] `pnpm build` 零错误零警告，无死链
 - [ ] 全站每个数字与第 2 节一致（1.08 MB、0.62 MB、1.2 MB、0.00%、124 ms、4.6 ms / 帧），`CountUp` 终值与原文完全一致
-- [ ] 全站没有出现第 2 节之外的功能、数据、竞品名或评价
+- [ ] 全站没有出现第 2 节之外的功能、数据、竞品名或评价；演示台的每个数字与参数都能在 `site.ts` 的 `demo` 里找到出处
 - [ ] **全站任何用户可见位置都没有 2.8 节的限制内容，也没有 jietu 旧名与升级迁移内容**
 - [ ] 下载按钮指向 `DOWNLOAD_URL`，站点没有任何 GitHub API 请求
-- [ ] 6 张截图均已使用，文件名为英文，带真实宽高；`alt` 与图注只描述可见内容
-- [ ] 关闭 JS 后首页内容完整可见；刷新首屏无「先消失再出现」的闪烁
-- [ ] 开启系统「减少动态效果」后：无入场动画、数字直接显示终值、无自动轮播
-- [ ] 动画只使用 `transform` / `opacity`；Chrome Performance 面板下滚动与标签切换无明显掉帧；`ProductTour` 切换无布局跳动
-- [ ] 375px / 768px / 1280px 三档无横向滚动
+- [ ] 7 张截图均已使用，文件名为英文，带真实宽高；`alt` 与图注只描述可见内容
+- [ ] 关闭 JS 后首页内容完整可见（演示台首帧就是一张成品矩形）；刷新首屏无「先消失再出现」的闪烁
+- [ ] 开启系统「减少动态效果」后：无入场动画、数字直接显示终值、演示台不播自动演示但手柄与引导在
+- [ ] 375px 下演示台为静态成品帧，拖拽与滚轮不响应，工具栏不溢出；768px / 1280px 三档无横向滚动
+- [ ] 演示台键盘：舞台在视口内时 1–9 / 0 切工具、V 回移动、Esc 取消选中；输入框内与窄屏不抢键
+- [ ] 动画只在 `transform` / `opacity` 上；演示台内部的 SVG 属性与颜色过渡是 8.0 允许的例外
 - [ ] 站点无深色模式：`appearance: false` 已设置，页面无主题切换开关，样式中无深色相关代码
 - [ ] 键盘可完整操作导航、搜索、标签页、下载按钮
 - [ ] 源码中没有 `any`、没有未使用的依赖、没有写死的域名
@@ -467,7 +514,7 @@ export default {
 
 - 不编造用户数、下载量、Star 数、评价、荣誉。
 - 不点名对比具体竞品，不放竞品对比表 / 图。
-- 不生成假截图、假界面 mock，不臆测截图中看不清的内容。
+- 不生成假截图、假设置面板，不臆测截图中看不清的内容。**演示台是例外，但必须照第 10.1 节复刻**：几何与色值来自源码、图标来自仓库、参数集中在 `site.ts`，不允许“看着像”就自己编。
 - 不把「实测」数据写成保证；统一表述为「作者实测」。
 - 不引入 UI 框架、动画库、统计脚本、网络字体；不做网站深色主题与主题切换开关。
 - 不展示 2.8 节的限制内容；不新增升级迁移页、赞助页、收款码。

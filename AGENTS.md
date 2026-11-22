@@ -57,10 +57,12 @@ https://v4.gh-proxy.org/https://github.com/bd-dxg/airsnip/releases/download/v0.1
 
 ## 约定
 
-- 产品事实只进 `data/site.ts`：数字、工具、快捷键、人群、截图元数据、链接常量。组件和 Markdown 一律从这里取数。
+- 产品事实只进 `data/site.ts`：数字、工具、快捷键、人群、截图元数据、链接常量、首页三块能力（`capabilities`），以及演示台的整套参数（`demo` 块）。组件和 Markdown 一律从这里取数。
 - 文案红线（spec 第 15 节）：不编造用户数 / 下载量 / 评价，不点名对比竞品，不做假截图，「实测」不写成保证，不展示产品已知限制，不提旧名 `jietu`。
-- 动效只动 `transform` / `opacity`；不做网站深色主题；不引入 UI 框架、动画库、统计脚本、网络字体。
-- 截图用英文文件名，`<img>` 带真实 `width` / `height`，除 hero 外都 `loading="lazy"`。
-- 首页分区由 `theme/Layout.vue` 的两个插槽组装；文档页需要数据驱动时用 `<script setup>` 局部引入组件。
+- **演示台只照源码复刻**（spec 第 10.1 节）：几何 / 色值 / 参数从软件仓库取并写进 `demo` 块，图标从 `assets/icons/ui/toolbar` 原样复制；渐变色标由 `gradient.rs` 的公式算出，不得手改；不要「看着像」就自己编。
+- 动效：页面级只动 `transform` / `opacity`；**演示台内部是例外**（自动演示的 SVG 属性过渡、主题切换的颜色过渡、拖拽的即时位移）。不做网站深色主题；不引入 UI 框架、动画库、统计脚本、网络字体。
+- 截图用英文文件名，`<img>` 带真实 `width` / `height`；首张覆盖层（`ProductTour` 标签 1）`eager`，其余 `lazy`。
+- 首页分区由 `theme/Layout.vue` 的三个插槽组装：`hero-after`（演示台）、`features-before`（本次更新）、`features-after`（其余区块）；`index.md` 不再声明 `features`。文档页需要数据驱动时用 `<script setup>` 局部引入组件。
+- 窄屏（≤767px）演示台是静态成品帧：不播演示、不接管指针与键盘、工具栏按 320–767 分档缩放；改动这块后要跑 `%TEMP%` 下的 CDP 脚本回归（phase3 / phase4 / 渐变 / 取色面板）。
 - 直接提交 `main`（CI 自动部署），不开 PR。commit 标题 `<emoji> <中文短语>`：🎉 初始化、✨ 新增、🐛 修复、♻️ 重构、🔧 配置、📝 文档、🚀 版本号与发布、🔒 安全；正文写清为什么改、影响哪几处。
 - 不提交 `node_modules/`、`docs/.vitepress/dist|cache/`、`*.log`、`.planning/`（`.gitignore` 已配）。
