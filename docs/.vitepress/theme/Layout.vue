@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme'
-import AudienceCards from './components/AudienceCards.vue'
+import Capabilities from './components/Capabilities.vue'
 import DemoStage from './components/DemoStage.vue'
 import DownloadCard from './components/DownloadCard.vue'
 import ProductTour from './components/ProductTour.vue'
 import ReleaseNotes from './components/ReleaseNotes.vue'
 import Reveal from './components/Reveal.vue'
 import StatsGrid from './components/StatsGrid.vue'
-import ToolShowcase from './components/ToolShowcase.vue'
 import { ISSUES_URL, LICENSE_URL, REPO_URL, THIRD_PARTY_URL } from '../data/site'
 
 const { Layout } = DefaultTheme
@@ -49,6 +48,8 @@ const reasons = [
     <template #home-features-after>
       <StatsGrid />
 
+      <Capabilities />
+
       <section class="as-section" aria-labelledby="as-reasons-title">
         <Reveal as="h2" id="as-reasons-title" class="as-section__title">为什么能这么小</Reveal>
         <ul class="as-reasons">
@@ -66,8 +67,6 @@ const reasons = [
       </section>
 
       <ProductTour />
-      <ToolShowcase />
-      <AudienceCards />
 
       <section class="as-section" aria-labelledby="as-open-source-title">
         <Reveal as="h2" id="as-open-source-title" class="as-section__title">开源</Reveal>

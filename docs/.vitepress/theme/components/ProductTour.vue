@@ -5,6 +5,8 @@ import Reveal from './Reveal.vue'
 
 const activeIndex = ref(0)
 const active = computed(() => screenshots[activeIndex.value])
+/** 容器比例锁在首张（覆盖层）：同容器切图不跳高，设置页截图居中留白 */
+const stageRatio = `${screenshots[0].width} / ${screenshots[0].height}`
 
 const tabRefs = ref<Array<HTMLButtonElement | null>>([])
 
@@ -34,7 +36,7 @@ function onKeydown(event: KeyboardEvent, index: number): void {
   <section class="as-section" aria-labelledby="as-tour-title">
     <Reveal as="h2" id="as-tour-title" class="as-section__title">产品界面</Reveal>
     <Reveal as="p" class="as-section__lead" :delay="60">
-      软件设置是自绘面板，跟随系统深浅色；下面是各设置页的实际样子。
+      第一张是按 F1 后的覆盖层；其余是软件设置面板，自绘、跟随系统深浅色。
     </Reveal>
 
     <div class="as-tour">
@@ -59,7 +61,7 @@ function onKeydown(event: KeyboardEvent, index: number): void {
 
       <div
         class="as-tour__stage as-window"
-        :style="{ aspectRatio: `${active.width} / ${active.height}` }"
+        :style="{ aspectRatio: stageRatio }"
       >
         <Transition name="as-fade-shift" mode="out-in">
           <div

@@ -17,29 +17,4 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/bd-dxg/airsnip
-features:
-  - title: 截图
-    details: F1 触发，全屏冻结后框选；鼠标停在窗口上单击即整窗选中，还能继续下钻到控件；没选区时 F 选整屏、R 复用上次区域；八向缩放、按住空格整体拖动。
-    link: /guide/features#capture
-    linkText: 了解详情
-  - title: 标注
-    details: 矩形、箭头、文本、高斯模糊、荧光笔、聚光灯、序号、直线、椭圆、手绘；描边可换渐变与虚线 / 点划线；序号可换成对勾 / 叉号徽标；框选完默认是移动态，选工具或按数字键才进绘制。
-    link: /guide/features#annotate
-    linkText: 了解详情
-  - title: 二次编辑
-    details: 选中对象显示包围框与八向手柄，拖动移动、拖角缩放，颜色与填充实时生效。
-    link: /guide/features#edit
-    linkText: 了解详情
-  - title: 长截图
-    details: 以当前选区为视口，自己滚动页面，Enter 收尾；页面里有轮播图、GIF 头像这类局部动画也能拼，快滚接得上，固定页眉页脚与粘滞侧栏不重复。
-    link: /guide/features#longshot
-    linkText: 了解详情
-  - title: 贴图
-    details: F3 把选区（含标注）钉在屏幕上，拖动、滚轮缩放、Ctrl+滚轮调透明度，最多 20 张。
-    link: /guide/features#pin
-    linkText: 了解详情
-  - title: 输出
-    details: 剪贴板（CF_DIB + 延迟渲染 PNG）与 PNG / JPEG / WebP 另存；配好保存路径模板后按 Alt+S 直接落盘，不弹对话框。
-    link: /guide/features#output
-    linkText: 了解详情
 ---

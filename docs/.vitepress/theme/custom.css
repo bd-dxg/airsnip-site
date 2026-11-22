@@ -89,27 +89,23 @@ kbd:focus-visible {
   color: var(--vp-c-text-2);
 }
 
+/* 首页内容容器：内容宽 1120，两侧固定 24（窄屏不贴边）；区块间距 96 → 160 */
 .as-section {
-  max-width: 1152px;
+  max-width: calc(1120px + 48px);
   margin: 0 auto;
-  padding: 72px 24px 0;
+  padding: 96px 24px 0;
 }
 
 .as-section--last {
   padding-bottom: 24px;
 }
 
-/* 首页 features 区的容器是 1152px 内容宽，这里跟它对齐，两块相邻节才不错位 */
-.as-section--wide {
-  max-width: calc(1152px + 128px);
-}
-
 .as-section__title {
-  margin: 0 0 12px;
-  font-size: 24px;
+  margin: 0 0 14px;
+  font-size: clamp(30px, 3.4vw, 40px);
   font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.01em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   color: var(--vp-c-text-1);
   border: none;
   padding: 0;
@@ -117,8 +113,8 @@ kbd:focus-visible {
 
 .as-section__lead {
   max-width: 640px;
-  margin: 0 0 28px;
-  font-size: 15px;
+  margin: 0 0 32px;
+  font-size: 16px;
   line-height: 1.7;
   color: var(--vp-c-text-2);
 }
@@ -209,17 +205,6 @@ button:focus-visible,
   }
 }
 
-@keyframes as-shot-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 .VPHero .name,
 .VPHero .text,
 .VPHero .tagline,
@@ -243,11 +228,23 @@ button:focus-visible,
   animation-delay: 240ms;
 }
 
-.as-hero-shot {
-  max-width: 1152px;
-  margin: 40px auto 0;
-  padding: 0 24px;
-  animation: as-shot-in var(--motion-slow) var(--ease-out) 240ms both;
+/* 主标题 72 / 行高 0.95；副标题跟着收一档，宽屏不挤成三行 */
+.VPHero .name {
+  font-size: clamp(44px, 7vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.VPHero .text {
+  font-size: clamp(28px, 4.2vw, 48px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.VPHero .tagline {
+  margin-top: 20px;
+  font-size: 17px;
+  line-height: 1.7;
 }
 
 /* ---------- Reveal ---------- */
@@ -445,6 +442,91 @@ button:focus-visible,
   font-size: 13px;
   line-height: 1.6;
   color: var(--vp-c-text-2);
+}
+
+/* ---------- Capabilities ---------- */
+
+.as-caps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.as-cap {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-areas:
+    'index title'
+    'index text'
+    'index link';
+  gap: 8px 12px;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.as-cap__index {
+  grid-area: index;
+  margin: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.9;
+  color: var(--vp-c-brand-1);
+}
+
+.as-cap__title {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--vp-c-text-1);
+}
+
+.as-cap__text {
+  grid-area: text;
+  max-width: 620px;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+.as-cap__link {
+  grid-area: link;
+  justify-self: start;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .as-cap__link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* 宽屏：序号 / 标题 / 链接一行，说明落在标题下方，链接靠右 */
+@media (min-width: 960px) {
+  .as-cap {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'index title link'
+      '.     text  link';
+    align-items: start;
+    padding: 40px 0;
+  }
+
+  .as-cap__link {
+    justify-self: end;
+    align-self: center;
+    margin-top: 0;
+  }
 }
 
 /* ---------- 「为什么能这么小」 ---------- */
@@ -744,11 +826,7 @@ button:focus-visible,
 
 @media (min-width: 640px) {
   .as-section {
-    padding: 88px 48px 0;
-  }
-
-  .as-hero-shot {
-    padding: 0 48px;
+    padding-top: 128px;
   }
 
   .as-stats,
@@ -769,11 +847,7 @@ button:focus-visible,
 
 @media (min-width: 960px) {
   .as-section {
-    padding: 104px 64px 0;
-  }
-
-  .as-hero-shot {
-    padding: 0 64px;
+    padding-top: 160px;
   }
 
   .as-stats {
@@ -816,9 +890,11 @@ button:focus-visible,
 /* ---------- 首页演示台 ---------- */
 
 .as-demo {
-  max-width: 1120px;
-  margin: 0 auto;
+  max-width: calc(1120px + 48px);
+  margin: 48px auto 0;
   padding: 0 24px;
+  /* 「在演示台按 1 试试」跳过来时，别被顶部导航盖住说明行 */
+  scroll-margin-top: 96px;
 }
 
 /* 画布上方的说明：软件能用数字键切工具，这里的舞台只是简化演示 */

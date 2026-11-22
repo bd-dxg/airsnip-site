@@ -39,7 +39,7 @@ const icons: Record<ReleaseChange['icon'], string> = {
 </script>
 
 <template>
-  <section class="as-section as-section--wide" aria-labelledby="as-release-title">
+  <section class="as-section" aria-labelledby="as-release-title">
     <Reveal as="header" class="as-release__head">
       <span class="as-release__badge">
         <span class="as-release__dot" aria-hidden="true" />

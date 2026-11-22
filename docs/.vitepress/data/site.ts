@@ -32,6 +32,16 @@ export interface Audience {
   description: string
 }
 
+/** 首页三块能力：标题、一句说明、演示台上的对应按键 */
+export interface Capability {
+  /** 序号，模板里直接当文字渲染 */
+  index: string
+  title: string
+  text: string
+  /** 演示台里对应的按键，如 '1 / 2 / 8' */
+  keys: string
+}
+
 export interface ReleaseChange {
   /** 卡片图标，由组件映射为内联 svg */
   icon:
@@ -64,7 +74,7 @@ export interface ReleaseUpdate {
 }
 
 export interface Screenshot {
-  id: 'general' | 'toolbar' | 'shortcuts' | 'save' | 'appearance' | 'about'
+  id: 'overlay' | 'general' | 'toolbar' | 'shortcuts' | 'save' | 'appearance' | 'about'
   /** 标签页名 */
   title: string
   /** 只描述图中可见内容 */
@@ -352,6 +362,15 @@ export const audiences: Audience[] = [
 
 export const screenshots: Screenshot[] = [
   {
+    id: 'overlay',
+    title: '覆盖层',
+    caption: '按 F1 后的样子：屏幕冻结、框选任意区域，底部一行就是全部标注工具。',
+    alt: '按 F1 后的截图覆盖层：背景整体压暗，选区框住网页内容并显示选区尺寸，屏幕底部一行标注工具栏',
+    src: '/images/hero.webp',
+    width: 1329,
+    height: 692,
+  },
+  {
     id: 'general',
     title: '通用',
     caption:
@@ -413,13 +432,26 @@ export const screenshots: Screenshot[] = [
   },
 ]
 
-export const heroShot = {
-  src: '/images/hero.webp',
-  width: 1329,
-  height: 692,
-  alt: '按 F1 后的截图覆盖层：背景整体压暗，选区框住网页内容并显示选区尺寸，屏幕底部一行标注工具栏',
-  caption: '按 F1 后的样子：屏幕冻结、框选任意区域，底部一行就是全部标注工具。',
-}
+export const capabilities: Capability[] = [
+  {
+    index: '1',
+    title: '一拖就成形',
+    text: '矩形、椭圆、箭头、直线、手绘：按住拖一下就成，箭头还能拽成 S 形曲线。',
+    keys: '1 / 2 / 8',
+  },
+  {
+    index: '2',
+    title: '写上去还能改',
+    text: '文本、序号徽标、二次编辑：选中的对象可拖可缩，圆角、线宽当场调。',
+    keys: '3 / 7 / V',
+  },
+  {
+    index: '3',
+    title: '该糊的糊住',
+    text: '高斯模糊、荧光笔、聚光灯：遮住敏感信息，又不遮住重点。',
+    keys: '4 / 5 / 6',
+  },
+]
 
 /**
  * 首页演示台（DemoStage）用的真实参数，每一项都能在软件源码里找到出处。
