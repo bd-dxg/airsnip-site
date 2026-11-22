@@ -640,6 +640,39 @@ export const demo = {
     save: { name: '保存', icon: 'save', hint: 'Ctrl+S' },
   },
 
-  /** 工具栏里的三个色块：两个纯色 + 一个渐变（palette.rs 的 DEFAULT_COLORS） */
-  swatches: { solid: ['#e53935', '#fb8c00'], gradient: ['#e53935', '#fb8c00'] },
+  /**
+   * 工具栏色块：2 个纯色 + 1 个渐变（palette.rs 的 DEFAULT_COLORS / SWATCH_COUNT）。
+   * 渐变按 src/editor/gradient.rs 预生成：8 个色标、色相走满 360° 且首尾闭合；
+   * 色标在 OKLCH 里取（L = 0.80，黄绿再抬 0.08；C = 该亮度下色域峰值 × 0.92）。
+   * 第 n 套起点色相 +45°，偶数套正序 / 奇数套反序，所以相邻两套一眼不同。
+   * 色值由 oklab.rs + gradient.rs 的公式跑出来，与软件逐位一致，不要手改。
+   */
+  swatches: {
+    solid: ['#e53935', '#fb8c00'],
+    /** 取色面板的快捷色：6 列 × 2 行（palette.rs 的 QUICK，RGB 已转 hex） */
+    quick: [
+      '#ffffff',
+      '#000000',
+      '#9e9e9e',
+      '#e53935',
+      '#fb8c00',
+      '#fdd835',
+      '#43a047',
+      '#00acc1',
+      '#1e88e5',
+      '#8e24aa',
+      '#d81b60',
+      '#6d4c41',
+    ],
+    gradientSets: [
+      ['#fbb5ac', '#fccf88', '#a2eb37', '#37d9c3', '#6ccafa', '#b6b6fa', '#fa95e4', '#fbb5ac'],
+      ['#fccd93', '#fbb0ae', '#fa91f4', '#afb8fa', '#57cdfa', '#38ddbb', '#bae737', '#fccd93'],
+      ['#cde338', '#39e2b1', '#36d1f9', '#a8bbfa', '#ef98fa', '#fbabb1', '#fccb9b', '#cde338'],
+      ['#3ae6a4', '#dcdf38', '#fcc8a0', '#fba5b5', '#e1a0fa', '#a1bdfa', '#37d3f0', '#3ae6a4'],
+      ['#37d4e7', '#99c0fa', '#d6a7fa', '#fa9fb9', '#fcc5a3', '#eadb38', '#3beb92', '#37d4e7'],
+      ['#90c2fa', '#37d5de', '#3cf076', '#f5d738', '#fcc1a6', '#fa9dc2', '#cdacfa', '#90c2fa'],
+      ['#c5affa', '#fa9bcc', '#fbbea8', '#fcd353', '#3cf53b', '#37d7d6', '#87c4fa', '#c5affa'],
+      ['#fa98d7', '#bdb3fa', '#7bc7fa', '#37d8cd', '#7ff037', '#fcd176', '#fbbaaa', '#fa98d7'],
+    ],
+  },
 } as const

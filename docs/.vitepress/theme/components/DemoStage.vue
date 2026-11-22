@@ -12,6 +12,8 @@ import { demo, tools } from '../../data/site'
 
 const stage = demo.stage
 const swatch = demo.swatches.solid[0]
+/** 渐变套数（gradientSets 的套数）：双击渐变色块在其中循环 */
+const gradientSets = demo.swatches.gradientSets
 
 const stageEl = ref<HTMLElement | null>(null)
 
@@ -22,6 +24,15 @@ interface Point {
 
 type BadgeMark = 'num' | 'check' | 'cross'
 
+/**
+ * 可涂色的对象：`color` 是纯色；用渐变时 `gradient` 记第几套，`color` 存代表色（stops[0]，
+ * 软件里文本、徽标数字等只能上单色的地方就用它）。
+ */
+interface Painted {
+  color: string
+  gradient?: number | null
+}
+
 interface BoxObject {
   x: number
   y: number
@@ -29,28 +40,25 @@ interface BoxObject {
   height: number
 }
 
-interface RectObject extends BoxObject {
+interface RectObject extends BoxObject, Painted {
   id: number
   kind: 'rect'
   radius: number
   stroke: number
-  color: string
   filled: boolean
 }
 
-interface EllipseObject extends BoxObject {
+interface EllipseObject extends BoxObject, Painted {
   id: number
   kind: 'ellipse'
   stroke: number
-  color: string
   filled: boolean
 }
 
-interface HighlightObject extends BoxObject {
+interface HighlightObject extends BoxObject, Painted {
   id: number
   kind: 'highlight'
   corner: number
-  color: string
 }
 
 interface BlurObject extends BoxObject {
@@ -66,7 +74,7 @@ interface GlowObject extends BoxObject {
   corner: number
 }
 
-interface ArrowObject {
+interface ArrowObject extends Painted {
   id: number
   kind: 'arrow'
   from: Point
@@ -74,37 +82,33 @@ interface ArrowObject {
   c1: Point
   c2: Point
   stroke: number
-  color: string
 }
 
-interface LineObject {
+interface LineObject extends Painted {
   id: number
   kind: 'line'
   from: Point
   to: Point
   stroke: number
-  color: string
 }
 
-interface FreehandObject {
+interface FreehandObject extends Painted {
   id: number
   kind: 'freehand'
   points: Point[]
   stroke: number
-  color: string
 }
 
-interface TextObject {
+interface TextObject extends Painted {
   id: number
   kind: 'text'
   x: number
   y: number
   text: string
   fontSize: number
-  color: string
 }
 
-interface NumberObject {
+interface NumberObject extends Painted {
   id: number
   kind: 'number'
   center: Point
@@ -113,7 +117,6 @@ interface NumberObject {
   value: number
   fontSize: number
   stroke: number
-  color: string
 }
 
 type DemoObject =
@@ -176,6 +179,40 @@ const defaults = reactive({
 
 /** 矩形 / 椭圆的填充开关（软件里就是工具栏那个「填充」） */
 const filled = ref(false)
+
+/** 当前渐变套号；双击渐变色块换下一套（gradient.rs 的 advance_gradient） */
+const gradientSet = ref(0)
+
+/** 两个纯色块的当前颜色：双击色块用取色面板改写（软件写回配置，这里只活到刷新） */
+const solidColors = reactive<string[]>([...demo.swatches.solid])
+
+/**
+ * 当前画笔：纯色时 `gradient` 为 null；渐变时 `gradient` 记套号、`color` 存代表色（stops[0]），
+ * 因为文本、徽标数字这些只能上单色的地方用的是代表色。
+ */
+const paint = reactive<{ color: string; gradient: number | null }>({
+  color: solidColors[0],
+  gradient: null,
+})
+
+/** 软件里渐变只对这几类对象开放（overlay/annotate/style.rs 的 kind_supports_gradient） */
+function supportsGradient(o: DemoObject): boolean {
+  return (
+    o.kind === 'rect' ||
+    o.kind === 'ellipse' ||
+    o.kind === 'arrow' ||
+    o.kind === 'line' ||
+    o.kind === 'freehand' ||
+    o.kind === 'number'
+  )
+}
+
+/** 渐变色块可不可点：有选中看对象，否之看当前工具；文本 / 荧光笔 / 模糊 / 聚光不支持 */
+const gradientAvailable = computed(() => {
+  const o = selected.value
+  if (o) return supportsGradient(o)
+  return activeTool.value !== 'text' && activeTool.value !== 'highlight'
+})
 
 /** 当前选中的工具，存图标名（'move' / 'rect' / ...） */
 const activeTool = ref('rect')
@@ -437,8 +474,9 @@ function numberArrowStart(o: NumberObject): Point {
   return { x: o.center.x + (dx / len) * radius, y: o.center.y + (dy / len) * radius }
 }
 
-/** 徽标内容按底色亮度取反色（render/badge.rs 的 contrast_ink） */
+/** 徽标内容按底色亮度取反色（render/badge.rs 的 contrast_ink）；渐变没法算亮度，统一用白字 */
 function badgeInk(o: NumberObject): string {
+  if (!o.color.startsWith('#')) return '#fff'
   const hex = o.color.replace('#', '')
   const r = parseInt(hex.slice(0, 2), 16)
   const g = parseInt(hex.slice(2, 4), 16)
@@ -486,6 +524,261 @@ function numberLeaderPath(o: NumberObject): string {
   // 线身从徽标边缘跑到头部底边，再往三角里探 deep
   const bodyLen = Math.max(len - head + deep, 0)
   return `M ${start.x} ${start.y} L ${start.x + dir.x * bodyLen} ${start.y + dir.y * bodyLen}`
+}
+
+/* ---------- 渐变描边（gradient.rs / gradient_stroke.rs / paint.rs 的 box_span） ---------- */
+
+interface GradientDef {
+  id: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  /** 按 offset（0..1）排好的色标；描边段只两端各一个，面渐变用完整 8 个 */
+  stops: Array<{ offset: number; color: string }>
+}
+
+interface StrokePiece extends GradientDef {
+  d: string
+}
+
+function hexChannels(hex: string): [number, number, number] {
+  const v = hex.replace('#', '')
+  return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)]
+}
+
+function mixHex(a: string, b: string, t: number): string {
+  const [r1, g1, b1] = hexChannels(a)
+  const [r2, g2, b2] = hexChannels(b)
+  const q = (v: number): string =>
+    Math.round(Math.min(255, Math.max(0, v)))
+      .toString(16)
+      .padStart(2, '0')
+  return `#${q(r1 + (r2 - r1) * t)}${q(g1 + (g2 - g1) * t)}${q(b1 + (b2 - b1) * t)}`
+}
+
+/** RGB → HSV（palette.rs 的 rgb_to_hsv），返回 h 0..360、s / v 0..1 */
+function rgbToHsv(hex: string): { h: number; s: number; v: number } {
+  const [r0, g0, b0] = hexChannels(hex)
+  const [r, g, b] = [r0 / 255, g0 / 255, b0 / 255]
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const d = max - min
+  let h = 0
+  if (d > 1e-6) {
+    if (max === r) h = 60 * (((g - b) / d) % 6)
+    else if (max === g) h = 60 * ((b - r) / d + 2)
+    else h = 60 * ((r - g) / d + 4)
+  }
+  return { h: ((h % 360) + 360) % 360, s: max === 0 ? 0 : d / max, v: max }
+}
+
+/** HSV → RGB（palette.rs 的 hsv_to_rgb） */
+function hsvToHex(h: number, s: number, v: number): string {
+  const hh = ((((h % 360) + 360) % 360) / 60)
+  const c = v * Math.min(Math.max(s, 0), 1)
+  const x = c * (1 - Math.abs((hh % 2) - 1))
+  const m = v - c
+  const [r, g, b] =
+    hh < 1 ? [c, x, 0] : hh < 2 ? [x, c, 0] : hh < 3 ? [0, c, x] : hh < 4 ? [0, x, c] : hh < 5 ? [x, 0, c] : [c, 0, x]
+  const q = (f: number): string =>
+    Math.round(Math.min(255, Math.max(0, (f + m) * 255)))
+      .toString(16)
+      .padStart(2, '0')
+  return `#${q(r)}${q(g)}${q(b)}`
+}
+
+/** 在某一套色标上取 t（0..1）的颜色；8 个色标足够密，段内线性看不出来 */
+function stopColor(set: number, t: number): string {
+  const stops = gradientSets[set] ?? gradientSets[0]
+  const last = stops.length - 1
+  const pos = Math.min(Math.max(t, 0), 1) * last
+  const i = Math.min(Math.floor(pos), last - 1)
+  return mixHex(stops[i], stops[i + 1], pos - i)
+}
+
+/** 整条色标按 offset 铺开（面渐变用）：软件 paint.rs 的 gradient_shader 就是这么排的 */
+function fullStops(set: number): Array<{ offset: number; color: string }> {
+  const stops = gradientSets[set] ?? gradientSets[0]
+  const last = stops.length - 1
+  return stops.map((color, i) => ({ offset: i / last, color }))
+}
+
+/** 包围盒长边方向的水平 / 竖直向量（paint.rs 的 box_span） */
+function boxSpan(x0: number, y0: number, x1: number, y1: number): Omit<GradientDef, 'id' | 'stops'> {
+  const mx = (x0 + x1) / 2
+  const my = (y0 + y1) / 2
+  return x1 - x0 >= y1 - y0 ? { x1: x0, y1: my, x2: x1, y2: my } : { x1: mx, y1: y0, x2: mx, y2: y1 }
+}
+
+/** 圆角矩形轮廓（顺时针，首点在上边左端）；圆角按每角 6 段采样 */
+function rectOutline(o: RectObject): Point[] {
+  const { x, y, width: w, height: h } = o
+  const r = Math.min(o.radius, w / 2, h / 2)
+  if (r < 0.5) return [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }]
+  const pts: Point[] = [{ x: x + r, y }, { x: x + w - r, y }]
+  const arc = (cx: number, cy: number, from: number, to: number): void => {
+    const steps = 6
+    for (let i = 1; i <= steps; i += 1) {
+      const a = (((from + ((to - from) * i) / steps) * Math.PI) / 180)
+      pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r })
+    }
+  }
+  arc(x + w - r, y + r, -90, 0)
+  pts.push({ x: x + w, y: y + h - r })
+  arc(x + w - r, y + h - r, 0, 90)
+  pts.push({ x: x + r, y: y + h })
+  arc(x + r, y + h - r, 90, 180)
+  pts.push({ x, y: y + r })
+  arc(x + r, y + r, 180, 270)
+  return pts
+}
+
+function ellipseOutline(o: EllipseObject): Point[] {
+  const cx = o.x + o.width / 2
+  const cy = o.y + o.height / 2
+  const steps = 96
+  return Array.from({ length: steps }, (_, i) => {
+    const a = (i / steps) * Math.PI * 2
+    return { x: cx + Math.cos(a) * (o.width / 2), y: cy + Math.sin(a) * (o.height / 2) }
+  })
+}
+
+/** 按弧长把折线切成段，每段一个两端取色的线性渐变（gradient_stroke.rs 的做法） */
+function piecesAlong(points: Point[], closed: boolean, o: DemoObject, step: number): StrokePiece[] {
+  if (o.gradient == null || points.length < 2) return []
+  const pts = closed ? [...points, points[0]] : points
+  const lens = pts.slice(1).map((p, i) => dist(pts[i], p))
+  const total = lens.reduce((sum, l) => sum + l, 0)
+  if (total < 1) return []
+  const out: StrokePiece[] = []
+  let arc = 0
+  let startArc = 0
+  let start = pts[0]
+  // 段内必须保留中间的拐点，否则圆角会被拉成直线
+  let d = `M ${pts[0].x} ${pts[0].y}`
+  for (let i = 1; i < pts.length; i += 1) {
+    arc += lens[i - 1]
+    d += ` L ${pts[i].x} ${pts[i].y}`
+    if (arc - startArc < step && i < pts.length - 1) continue
+    out.push({
+      id: `grad-${o.id}-${out.length}`,
+      d,
+      x1: start.x,
+      y1: start.y,
+      x2: pts[i].x,
+      y2: pts[i].y,
+      stops: [
+        { offset: 0, color: stopColor(o.gradient, startArc / total) },
+        { offset: 1, color: stopColor(o.gradient, arc / total) },
+      ],
+    })
+    start = pts[i]
+    startArc = arc
+    d = `M ${pts[i].x} ${pts[i].y}`
+  }
+  return out
+}
+
+/** 直角矩形的 4 条边各一段（gradient_stroke.rs 的 stroke_rect_edges 快速路径） */
+function edgePieces(o: RectObject, corners: Point[]): StrokePiece[] {
+  const set = o.gradient ?? 0
+  const { width: w, height: h } = o
+  const per = 2 * (w + h)
+  const segs: Array<[Point, Point, number, number]> = [
+    [corners[0], corners[1], 0, w / per],
+    [corners[1], corners[2], w / per, (w + h) / per],
+    [corners[2], corners[3], (w + h) / per, (2 * w + h) / per],
+    [corners[3], corners[0], (2 * w + h) / per, 1],
+  ]
+  return segs.map(([a, b, t0, t1], i) => ({
+    id: `grad-${o.id}-${i}`,
+    d: `M ${a.x} ${a.y} L ${b.x} ${b.y}`,
+    x1: a.x,
+    y1: a.y,
+    x2: b.x,
+    y2: b.y,
+    stops: [
+      { offset: 0, color: stopColor(set, t0) },
+      { offset: 1, color: stopColor(set, t1) },
+    ],
+  }))
+}
+
+/** 描边要沿路径走色的三类：矩形 / 椭圆 / 手绘（箭头与直线走起点→终点的线性） */
+function strokePieces(o: DemoObject): StrokePiece[] {
+  if (o.gradient == null || !supportsGradient(o)) return []
+  switch (o.kind) {
+    case 'rect':
+      if (o.filled) return []
+      // 直角矩形走 4 条边的快速路径；有圆角就沿轮廓按弧长切
+      return o.radius < 0.5 ? edgePieces(o, rectOutline(o)) : piecesAlong(rectOutline(o), true, o, 64)
+    case 'ellipse':
+      return o.filled ? [] : piecesAlong(ellipseOutline(o), true, o, 24)
+    case 'freehand':
+      return piecesAlong(o.points, false, o, 24)
+    default:
+      return []
+  }
+}
+
+/** 面（填充 / 徽标圆 / 箭头三角）的线性渐变：填充与徽标沿长边，箭头沿起点→终点；用完整彩虹色标 */
+function faceDef(o: DemoObject): GradientDef | null {
+  if (o.gradient == null || !supportsGradient(o)) return null
+  const set = o.gradient
+  const make = (span: Omit<GradientDef, 'id' | 'stops'>, id: string): GradientDef => ({
+    id,
+    ...span,
+    stops: fullStops(set),
+  })
+  switch (o.kind) {
+    case 'rect':
+    case 'ellipse':
+      return o.filled ? make(boxSpan(o.x, o.y, o.x + o.width, o.y + o.height), `grad-face-${o.id}`) : null
+    case 'number':
+      return make(boxSpan(o.center.x - numberRadius(o), o.center.y - numberRadius(o), o.center.x + numberRadius(o), o.center.y + numberRadius(o)), `grad-face-${o.id}`)
+    case 'arrow':
+    case 'line':
+      return make({ x1: o.from.x, y1: o.from.y, x2: o.to.x, y2: o.to.y }, `grad-face-${o.id}`)
+    default:
+      return null
+  }
+}
+
+/** 序号引线沿起点→终点线性；圆面另用 faceDef 的长边渐变 */
+function leaderDef(o: NumberObject): GradientDef | null {
+  if (o.gradient == null) return null
+  const start = numberArrowStart(o)
+  return {
+    id: `grad-lead-${o.id}`,
+    x1: start.x,
+    y1: start.y,
+    x2: o.tip.x,
+    y2: o.tip.y,
+    stops: fullStops(o.gradient),
+  }
+}
+
+const gradientPainting = computed(() => {
+  const byObject = new Map<number, StrokePiece[]>()
+  const defs: GradientDef[] = []
+  for (const o of objects) {
+    if (o.gradient == null || !supportsGradient(o)) continue
+    const pieces = strokePieces(o)
+    byObject.set(o.id, pieces)
+    defs.push(...pieces)
+    const face = faceDef(o)
+    if (face) defs.push(face)
+    if (o.kind === 'number') {
+      const leader = leaderDef(o)
+      if (leader) defs.push(leader)
+    }
+  }
+  return { byObject, defs }
+})
+
+function piecesOf(o: DemoObject): StrokePiece[] {
+  return gradientPainting.value.byObject.get(o.id) ?? []
 }
 
 function nextNumber(): number {
@@ -758,8 +1051,12 @@ function beginDrag(state: Omit<DragState, 'box'> & { box: DOMRect | null }, ev: 
 
 function onPointerDown(ev: PointerEvent): void {
   if (narrow.value) return
+  const target = ev.target as Element | null
+  // 取色面板内部不参与框选；点舞台其他位置先收起面板
+  if (target?.closest?.('.as-demo__color-panel')) return
+  if (panel.value) closePanel()
   if (
-    (ev.target as Element | null)?.closest?.(
+    target?.closest?.(
       '.as-demo__toolbar, .as-demo__controls, .as-demo__badge-toggle, .as-demo__badge-menu, .as-demo__editor',
     )
   ) {
@@ -1090,7 +1387,9 @@ function removeObject(o: DemoObject): void {
 
 /** 新建对象：按下点即起点，几何在拖动中长出来 */
 function createObject(tool: string, point: Point): DemoObject | null {
-  const base = { id: nextId++, color: swatch }
+  // 文本 / 荧光笔 / 模糊 / 聚光不支持渐变，渐变画笔下只拿代表色
+  const gradable = tool === 'rect' || tool === 'ellipse' || tool === 'arrow' || tool === 'line' || tool === 'freehand' || tool === 'number'
+  const base = { id: nextId++, color: paint.color, gradient: gradable ? paint.gradient : null }
   switch (tool) {
     case 'rect':
       return { ...base, kind: 'rect', x: point.x, y: point.y, width: 0, height: 0, radius: 0, stroke: defaults.stroke, filled: filled.value }
@@ -1139,6 +1438,7 @@ function createObject(tool: string, point: Point): DemoObject | null {
         fontSize: defaults.numberSize,
         stroke: defaults.stroke,
         color: base.color,
+        gradient: base.gradient,
       }
     default:
       return null
@@ -1392,7 +1692,12 @@ function onWindowKey(ev: KeyboardEvent): void {
   if (ev.ctrlKey || ev.altKey || ev.metaKey || isTypingTarget(ev.target)) return
 
   if (ev.key === 'Escape') {
-    // 文字编辑框与徽标菜单各自处理 Esc，不在这里重复
+    // 取色面板优先关；文字编辑框与徽标菜单各自处理 Esc，不在这里重复
+    if (panel.value) {
+      closePanel()
+      ev.preventDefault()
+      return
+    }
     if (editingText.value || badgeMenuId.value !== null) return
     if (selectedId.value !== null) {
       selectedId.value = null
@@ -1425,6 +1730,174 @@ function toggleFill(): void {
   filled.value = !filled.value
   const o = selected.value
   if (o && (o.kind === 'rect' || o.kind === 'ellipse')) o.filled = filled.value
+}
+
+/** 点纯色块：切纯色画笔；有选中对象时直接给它改色 */
+function selectSolid(color: string): void {
+  paint.color = color
+  paint.gradient = null
+  const o = selected.value
+  if (!o || o.kind === 'blur' || o.kind === 'glow') return
+  o.color = color
+  o.gradient = null
+}
+
+/* ---------- 取色面板（toolbar/colorpanel：色相条 + SV 方块 + 12 个快捷色） ---------- */
+
+/** 面板尺寸基准（100% DPI），窄屏不打开面板，所以固定按工具栏 115% 缩放 */
+const PANEL = { width: 208, pad: 8, gap: 8, hue: 14, sv: 104, swatch: 24, swatchGap: 8 }
+const PANEL_SCALE = 1.15
+
+interface ColorPanelState {
+  /** 正在改哪个纯色块 */
+  index: number
+  hue: number
+  sat: number
+  val: number
+  dragging: 'hue' | 'sv' | null
+}
+
+const panel = ref<ColorPanelState | null>(null)
+const hueEl = ref<HTMLElement | null>(null)
+const svEl = ref<HTMLElement | null>(null)
+
+function panelHeight(): number {
+  return (PANEL.pad * 2 + PANEL.hue + PANEL.gap + PANEL.sv + PANEL.gap + PANEL.swatch * 2 + PANEL.swatchGap) * PANEL_SCALE
+}
+
+/** 锚在被双击的色块上方，夹回舞台内 */
+const panelStyle = computed<Record<string, string>>(() => {
+  const stage = stageEl.value
+  if (!panel.value || !stage) return {}
+  const box = stage.getBoundingClientRect()
+  const w = PANEL.width * PANEL_SCALE
+  const h = panelHeight()
+  const anchors = stage.querySelectorAll('.as-demo__swatch')
+  const anchor = anchors[panel.value.index]?.getBoundingClientRect()
+  const bar = stage.querySelector('.as-demo__toolbar')?.getBoundingClientRect()
+  const cx = anchor ? anchor.left - box.left + anchor.width / 2 : box.width / 2
+  const barTop = bar ? bar.top - box.top : box.height - 60
+  const left = Math.min(Math.max(cx - w / 2, 8), Math.max(box.width - w - 8, 8))
+  const top = Math.min(Math.max(barTop - h - 8, 8), Math.max(box.height - h - 8, 8))
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${w}px`,
+    padding: `${PANEL.pad * PANEL_SCALE}px`,
+    gap: `${PANEL.gap * PANEL_SCALE}px`,
+    '--panel-s': `${PANEL_SCALE}`,
+  }
+})
+
+const panelColor = computed(() =>
+  panel.value ? hsvToHex(panel.value.hue, panel.value.sat, panel.value.val) : '',
+)
+
+/** SV 方块：白→纯色相横向、透明→黑纵向叠在一起（与软件自绘一致） */
+const svStyle = computed<Record<string, string>>(() => {
+  const p = panel.value
+  if (!p) return {}
+  return {
+    backgroundColor: hsvToHex(p.hue, 1, 1),
+    backgroundImage: 'linear-gradient(to top, #000, rgba(0,0,0,0)), linear-gradient(to right, #fff, rgba(255,255,255,0))',
+  }
+})
+
+const svMarkerStyle = computed<Record<string, string>>(() => {
+  const p = panel.value
+  if (!p) return {}
+  return { left: `${p.sat * 100}%`, top: `${(1 - p.val) * 100}%` }
+})
+
+const hueMarkerStyle = computed<Record<string, string>>(() => {
+  const p = panel.value
+  if (!p) return {}
+  return { left: `${(p.hue / 360) * 100}%` }
+})
+
+function openPanel(index: number): void {
+  const { h, s, v } = rgbToHsv(solidColors[index])
+  panel.value = { index, hue: h, sat: s, val: v, dragging: null }
+}
+
+function closePanel(): void {
+  if (!panel.value) return
+  panel.value = null
+  window.removeEventListener('pointermove', onPanelMove)
+  window.removeEventListener('pointerup', endPanelDrag)
+}
+
+/** 面板里的颜色实时写回该色块，并当成当前画笔用上 */
+function applyPanel(): void {
+  const p = panel.value
+  if (!p) return
+  const hex = hsvToHex(p.hue, p.sat, p.val)
+  solidColors[p.index] = hex
+  selectSolid(hex)
+}
+
+function pickQuick(hex: string): void {
+  const p = panel.value
+  if (!p) return
+  const { h, s, v } = rgbToHsv(hex)
+  p.hue = h
+  p.sat = s
+  p.val = v
+  applyPanel()
+}
+
+function updatePanelFromPointer(ev: PointerEvent): void {
+  const p = panel.value
+  if (!p) return
+  const el = p.dragging === 'hue' ? hueEl.value : svEl.value
+  if (!el) return
+  const box = el.getBoundingClientRect()
+  const x = Math.min(Math.max((ev.clientX - box.left) / box.width, 0), 1)
+  const y = Math.min(Math.max((ev.clientY - box.top) / box.height, 0), 1)
+  if (p.dragging === 'hue') p.hue = x * 360
+  else {
+    p.sat = x
+    p.val = 1 - y
+  }
+  applyPanel()
+}
+
+function onPanelMove(ev: PointerEvent): void {
+  updatePanelFromPointer(ev)
+}
+
+function endPanelDrag(): void {
+  if (panel.value) panel.value.dragging = null
+  window.removeEventListener('pointermove', onPanelMove)
+  window.removeEventListener('pointerup', endPanelDrag)
+}
+
+function startPanelDrag(mode: 'hue' | 'sv', ev: PointerEvent): void {
+  const p = panel.value
+  if (!p) return
+  p.dragging = mode
+  updatePanelFromPointer(ev)
+  window.addEventListener('pointermove', onPanelMove)
+  window.addEventListener('pointerup', endPanelDrag)
+  ev.preventDefault()
+  ev.stopPropagation()
+}
+
+/** 点渐变色块：切到当前这一套；不支持渐变的对象（文本 / 荧光笔）只拿代表色 */
+function selectGradient(): void {
+  const stops = gradientSets[gradientSet.value]
+  paint.gradient = gradientSet.value
+  paint.color = stops[0]
+  const o = selected.value
+  if (!o || o.kind === 'blur' || o.kind === 'glow') return
+  o.color = stops[0]
+  o.gradient = supportsGradient(o) ? gradientSet.value : null
+}
+
+/** 双击渐变色块：换下一套（gradient.rs 的 advance_gradient，正反序交替） */
+function cycleGradient(): void {
+  gradientSet.value = (gradientSet.value + 1) % gradientSets.length
+  if (paint.gradient !== null) selectGradient()
 }
 
 function updateHover(ev: PointerEvent): void {
@@ -1491,7 +1964,9 @@ function makeDemoRect(): RectObject {
     height: 0,
     radius: 0,
     stroke: 2,
-    color: swatch,
+    color: paint.color,
+    // 演示矩形固定纯色：渐变是把描边拆成多段画的，CSS 过渡对它不生效
+    gradient: null,
     filled: false,
   }
 }
@@ -1637,6 +2112,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimers()
   endDrag()
+  closePanel()
   window.removeEventListener('keydown', onWindowKey)
   narrowMql?.removeEventListener('change', onNarrowChange)
   narrowMql = null
@@ -1800,6 +2276,20 @@ const statusText = computed(() => {
               fill="#000"
             />
           </mask>
+
+          <!-- 渐变画笔：每段描边一个 2-stop 线性渐变，方向就是这一段的方向 -->
+          <linearGradient
+            v-for="def in gradientPainting.defs"
+            :id="def.id"
+            :key="def.id"
+            gradientUnits="userSpaceOnUse"
+            :x1="def.x1"
+            :y1="def.y1"
+            :x2="def.x2"
+            :y2="def.y2"
+          >
+            <stop v-for="(stop, index) in def.stops" :key="index" :offset="stop.offset * 100 + '%'" :stop-color="stop.color" />
+          </linearGradient>
         </defs>
 
         <rect
@@ -1813,29 +2303,70 @@ const statusText = computed(() => {
         />
 
         <template v-for="obj in objects" :key="obj.id">
-          <rect
-            v-if="obj.kind === 'rect'"
-            class="as-demo__object"
-            :x="obj.x"
-            :y="obj.y"
-            :width="obj.width"
-            :height="obj.height"
-            :rx="obj.radius"
-            :ry="obj.radius"
-            :stroke-width="obj.stroke"
-            :stroke="obj.color"
-            :fill="obj.filled ? obj.color : 'none'"
-          />
-          <ellipse
-            v-else-if="obj.kind === 'ellipse'"
-            :cx="obj.x + obj.width / 2"
-            :cy="obj.y + obj.height / 2"
-            :rx="obj.width / 2"
-            :ry="obj.height / 2"
-            :stroke-width="obj.stroke"
-            :stroke="obj.color"
-            :fill="obj.filled ? obj.color : 'none'"
-          />
+          <template v-if="obj.kind === 'rect'">
+            <path
+              v-for="piece in piecesOf(obj)"
+              :key="piece.id"
+              :d="piece.d"
+              :stroke="`url(#${piece.id})`"
+              :stroke-width="obj.stroke"
+              fill="none"
+              stroke-linecap="round"
+            />
+            <rect
+              v-if="obj.gradient != null && obj.filled"
+              class="as-demo__object"
+              :x="obj.x"
+              :y="obj.y"
+              :width="obj.width"
+              :height="obj.height"
+              :rx="obj.radius"
+              :ry="obj.radius"
+              :fill="`url(#grad-face-${obj.id})`"
+            />
+            <rect
+              v-else-if="obj.gradient == null"
+              class="as-demo__object"
+              :x="obj.x"
+              :y="obj.y"
+              :width="obj.width"
+              :height="obj.height"
+              :rx="obj.radius"
+              :ry="obj.radius"
+              :stroke-width="obj.stroke"
+              :stroke="obj.color"
+              :fill="obj.filled ? obj.color : 'none'"
+            />
+          </template>
+          <template v-else-if="obj.kind === 'ellipse'">
+            <path
+              v-for="piece in piecesOf(obj)"
+              :key="piece.id"
+              :d="piece.d"
+              :stroke="`url(#${piece.id})`"
+              :stroke-width="obj.stroke"
+              fill="none"
+              stroke-linecap="round"
+            />
+            <ellipse
+              v-if="obj.gradient != null && obj.filled"
+              :cx="obj.x + obj.width / 2"
+              :cy="obj.y + obj.height / 2"
+              :rx="obj.width / 2"
+              :ry="obj.height / 2"
+              :fill="`url(#grad-face-${obj.id})`"
+            />
+            <ellipse
+              v-else-if="obj.gradient == null"
+              :cx="obj.x + obj.width / 2"
+              :cy="obj.y + obj.height / 2"
+              :rx="obj.width / 2"
+              :ry="obj.height / 2"
+              :stroke-width="obj.stroke"
+              :stroke="obj.color"
+              :fill="obj.filled ? obj.color : 'none'"
+            />
+          </template>
           <rect
             v-else-if="obj.kind === 'highlight'"
             :x="obj.x"
@@ -1850,13 +2381,16 @@ const statusText = computed(() => {
           <g v-else-if="obj.kind === 'arrow'">
             <path
               :d="arrowBodyPath(obj)"
-              :stroke="obj.color"
+              :stroke="obj.gradient != null ? `url(#grad-face-${obj.id})` : obj.color"
               :stroke-width="obj.stroke"
               fill="none"
               stroke-linecap="butt"
               stroke-linejoin="miter"
             />
-            <polygon :points="arrowHead(obj)" :fill="obj.color" />
+            <polygon
+              :points="arrowHead(obj)"
+              :fill="obj.gradient != null ? `url(#grad-face-${obj.id})` : obj.color"
+            />
           </g>
           <line
             v-else-if="obj.kind === 'line'"
@@ -1864,19 +2398,31 @@ const statusText = computed(() => {
             :y1="obj.from.y"
             :x2="obj.to.x"
             :y2="obj.to.y"
-            :stroke="obj.color"
+            :stroke="obj.gradient != null ? `url(#grad-face-${obj.id})` : obj.color"
             :stroke-width="obj.stroke"
             stroke-linecap="round"
           />
-          <path
-            v-else-if="obj.kind === 'freehand'"
-            :d="freehandPath(obj.points)"
-            :stroke="obj.color"
-            :stroke-width="obj.stroke"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
+          <template v-else-if="obj.kind === 'freehand'">
+            <path
+              v-for="piece in piecesOf(obj)"
+              :key="piece.id"
+              :d="piece.d"
+              :stroke="`url(#${piece.id})`"
+              :stroke-width="obj.stroke"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              v-if="obj.gradient == null"
+              :d="freehandPath(obj.points)"
+              :stroke="obj.color"
+              :stroke-width="obj.stroke"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </template>
           <text
             v-else-if="obj.kind === 'text'"
             class="as-demo__text"
@@ -1892,14 +2438,22 @@ const statusText = computed(() => {
             <template v-if="dist(obj.center, obj.tip) >= 1">
               <path
                 :d="numberLeaderPath(obj)"
-                :stroke="obj.color"
+                :stroke="obj.gradient != null ? `url(#grad-lead-${obj.id})` : obj.color"
                 :stroke-width="obj.stroke"
                 fill="none"
                 stroke-linecap="butt"
               />
-              <polygon :points="numberHead(obj)" :fill="obj.color" />
+              <polygon
+                :points="numberHead(obj)"
+                :fill="obj.gradient != null ? `url(#grad-lead-${obj.id})` : obj.color"
+              />
             </template>
-            <circle :cx="obj.center.x" :cy="obj.center.y" :r="numberRadius(obj)" :fill="obj.color" />
+            <circle
+              :cx="obj.center.x"
+              :cy="obj.center.y"
+              :r="numberRadius(obj)"
+              :fill="obj.gradient != null ? `url(#grad-face-${obj.id})` : obj.color"
+            />
             <text
               v-if="obj.mark === 'num'"
               class="as-demo__badge-text"
@@ -2134,22 +2688,29 @@ const statusText = computed(() => {
 
         <div class="as-demo__extra">
           <button
-            v-for="(color, index) in demo.swatches.solid"
-            :key="color"
+            v-for="(color, index) in solidColors"
+            :key="index"
             type="button"
             class="as-demo__swatch"
-            :class="{ 'is-active': index === 0 }"
+            :class="{ 'is-active': paint.gradient === null && paint.color === color }"
             :style="{ '--as-demo-swatch': color }"
-            :aria-label="`色块 ${index + 1}`"
+            :aria-label="`色块 ${index + 1}（双击换色）`"
+            :aria-pressed="paint.gradient === null && paint.color === color"
+            :title="`色块 ${index + 1}（双击换色）`"
+            @click="selectSolid(color)"
+            @dblclick="openPanel(index)"
           />
           <button
             type="button"
             class="as-demo__swatch as-demo__swatch--gradient"
-            :style="{
-              '--as-demo-swatch-from': demo.swatches.gradient[0],
-              '--as-demo-swatch-to': demo.swatches.gradient[1],
-            }"
+            :class="{ 'is-active': paint.gradient !== null }"
+            :style="{ backgroundImage: `linear-gradient(135deg, ${gradientSets[gradientSet].join(', ')})` }"
             aria-label="渐变色块"
+            :aria-pressed="paint.gradient !== null"
+            :disabled="!gradientAvailable"
+            title="渐变色块（双击换一套）"
+            @click="selectGradient"
+            @dblclick="cycleGradient"
           />
 
           <span class="as-demo__sep" aria-hidden="true" />
@@ -2197,6 +2758,47 @@ const statusText = computed(() => {
             <span class="as-demo__icon" :style="iconStyle(demo.actions.save.icon)" />
           </button>
         </div>
+      </div>
+
+      <div v-if="panel" class="as-demo__color-panel" :style="panelStyle" @pointerdown.stop>
+        <div
+          ref="hueEl"
+          class="as-demo__cp-hue"
+          role="slider"
+          aria-label="色相"
+          :aria-valuenow="Math.round(panel.hue)"
+          aria-valuemin="0"
+          aria-valuemax="360"
+          @pointerdown="startPanelDrag('hue', $event)"
+        >
+          <span class="as-demo__cp-mark" :style="hueMarkerStyle" />
+        </div>
+        <div
+          ref="svEl"
+          class="as-demo__cp-sv"
+          :style="svStyle"
+          role="slider"
+          aria-label="饱和度与明度"
+          @pointerdown="startPanelDrag('sv', $event)"
+        >
+          <span class="as-demo__cp-dot" :style="svMarkerStyle" />
+        </div>
+        <div class="as-demo__cp-quick">
+          <button
+            v-for="hex in demo.swatches.quick"
+            :key="hex"
+            type="button"
+            class="as-demo__cp-swatch"
+            :style="{ '--as-demo-swatch': hex }"
+            :aria-label="`快捷色 ${hex}`"
+            :title="hex"
+            @click="pickQuick(hex)"
+          />
+        </div>
+        <p class="as-demo__cp-preview" aria-live="polite">
+          <span class="as-demo__cp-chip" :style="{ '--as-demo-swatch': panelColor }" aria-hidden="true" />
+          {{ panelColor.toUpperCase() }}
+        </p>
       </div>
     </div>
 
