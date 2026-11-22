@@ -921,6 +921,11 @@ button:focus-visible,
   box-shadow: var(--as-shadow-card);
 }
 
+/* 舞台自己能用 Tab 聚焦（键盘切工具），别把 18px 圆角被全局 focus 规则压成 4px */
+.as-demo__stage:focus-visible {
+  border-radius: 18px;
+}
+
 /* 舞台底图：假部署日志，只作背景，不参与交互 */
 .as-demo__doc {
   position: absolute;

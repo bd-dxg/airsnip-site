@@ -1380,8 +1380,33 @@ function onGripKey(ev: KeyboardEvent): void {
   ev.preventDefault()
 }
 
-/** 工具栏内按数字键切工具：与软件一致，但不抢页面其他位置的按键 */
-function onToolbarKey(ev: KeyboardEvent): void {
+/** 工具栏数字键：与软件一致（1–9 / 0 切工具、V 回移动、Esc 取消选中），只在舞台于视口内时接管 */
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el || typeof el.tagName !== 'string') return false
+  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable === true
+}
+
+function onWindowKey(ev: KeyboardEvent): void {
+  if (narrow.value || !stageVisible.value) return
+  if (ev.ctrlKey || ev.altKey || ev.metaKey || isTypingTarget(ev.target)) return
+
+  if (ev.key === 'Escape') {
+    // 文字编辑框与徽标菜单各自处理 Esc，不在这里重复
+    if (editingText.value || badgeMenuId.value !== null) return
+    if (selectedId.value !== null) {
+      selectedId.value = null
+      ev.preventDefault()
+    }
+    return
+  }
+
+  if (ev.key === 'v' || ev.key === 'V') {
+    setTool('move')
+    ev.preventDefault()
+    return
+  }
+
   const tool = tools.find((item) => item.key === ev.key)
   if (!tool) return
   setTool(tool.icon)
@@ -1432,6 +1457,8 @@ function updateHover(ev: PointerEvent): void {
 /* ---------- 自动演示：进视口演一遍，只播一次 ---------- */
 
 const { inView } = useInView(stageEl)
+/** 舞台在不在视口内：在视口内才接管键盘，用户在页面别处按键时不受影响 */
+const { inView: stageVisible } = useInView(stageEl, { once: false })
 const { reduced: reducedMotion } = useReducedMotion()
 /** 正在自动演示：此时才给矩形加过渡，平时拖拽是即时的 */
 const playing = ref(false)
@@ -1597,6 +1624,7 @@ onMounted(() => {
   }
   const el = stageEl.value
   if (!el) return
+  window.addEventListener('keydown', onWindowKey)
   stageWidthPx.value = el.clientWidth || stage.width
   if (typeof ResizeObserver === 'undefined') return
   const observer = new ResizeObserver(() => {
@@ -1609,6 +1637,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimers()
   endDrag()
+  window.removeEventListener('keydown', onWindowKey)
   narrowMql?.removeEventListener('change', onNarrowChange)
   narrowMql = null
   resizeObserver?.disconnect()
@@ -1707,9 +1736,9 @@ const statusText = computed(() => {
 </script>
 
 <template>
-  <div class="as-demo" :style="paletteStyle">
+  <div id="as-demo" class="as-demo" :style="paletteStyle">
     <p class="as-demo__notice">
-      软件里按 <kbd>1</kbd>–<kbd>9</kbd> / <kbd>0</kbd> 就能直接切换这十个工具（快捷键可在设置里改）；下面只是简化演示，不代表全部功能。
+      软件里按 <kbd>1</kbd>–<kbd>9</kbd> / <kbd>0</kbd> 就能直接切换这十个工具（快捷键可在设置里改）；这里也能按，只是简化演示，不代表全部功能。
     </p>
 
     <div
@@ -1717,6 +1746,9 @@ const statusText = computed(() => {
       class="as-demo__stage"
       :class="{ 'is-playing': playing }"
       :style="{ cursor }"
+      tabindex="0"
+      role="group"
+      aria-label="标注演示台：按 1–9 或 0 切换工具，V 切回移动，Esc 取消选中"
       @wheel="onWheel"
       @pointerdown="onPointerDown"
       @pointermove="onHoverMove"
@@ -2073,7 +2105,7 @@ const statusText = computed(() => {
         <button type="button" class="as-demo__reset as-demo__only-wide" @click="clearAll">清空</button>
       </div>
 
-      <div class="as-demo__toolbar" role="toolbar" aria-label="标注工具栏（演示）" @keydown="onToolbarKey">
+      <div class="as-demo__toolbar" role="toolbar" aria-label="标注工具栏（演示）">
         <button
           type="button"
           class="as-demo__btn"
