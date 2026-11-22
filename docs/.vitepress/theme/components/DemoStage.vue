@@ -15,6 +15,7 @@ import { lerp, snapDirection, squareCorner, arrowPolyline, dist, distToSegment, 
 import { strokePieces, faceDef, leaderDef } from './demo/paint'
 import type { GradientDef, StrokePiece } from './demo/paint'
 import ColorPanel from './demo/ColorPanel.vue'
+import DemoToolbar from './demo/DemoToolbar.vue'
 
 const stage = demo.stage
 const swatch = demo.swatches.solid[0]
@@ -1403,10 +1404,6 @@ const paletteStyle = computed(() => ({
   '--as-demo-shadow': palette.value.shadow,
 }))
 
-function iconStyle(icon: string): Record<string, string> {
-  return { '--as-demo-mask': `url(/demo/icons/${icon}.svg)` }
-}
-
 const guideStyle = computed(() => {
   const point = guidePoint.value
   if (!point) return {}
@@ -1928,106 +1925,20 @@ const statusText = computed(() => {
         <button type="button" class="as-demo__reset as-demo__only-wide" @click="clearAll">清空</button>
       </div>
 
-      <div class="as-demo__toolbar" role="toolbar" aria-label="标注工具栏（演示）">
-        <button
-          type="button"
-          class="as-demo__btn"
-          :class="{ 'is-active': activeTool === 'move' }"
-          :title="`${demo.actions.move.name} ${demo.actions.move.hint}`"
-          @click="setTool('move')"
-        >
-          <span class="as-demo__icon" :style="iconStyle(demo.actions.move.icon)" />
-        </button>
-
-        <span class="as-demo__sep" aria-hidden="true" />
-
-        <button
-          v-for="tool in tools"
-          :key="tool.key"
-          type="button"
-          class="as-demo__btn"
-          :class="{ 'is-active': activeTool === tool.icon }"
-          :title="`${tool.name} ${tool.key}`"
-          @click="setTool(tool.icon)"
-        >
-          <span class="as-demo__icon" :style="iconStyle(tool.icon)" />
-        </button>
-
-        <span class="as-demo__sep" aria-hidden="true" />
-
-        <div class="as-demo__extra">
-          <button
-            v-for="(color, index) in solidColors"
-            :key="index"
-            type="button"
-            class="as-demo__swatch"
-            :class="{ 'is-active': paint.gradient === null && paint.color === color }"
-            :style="{ '--as-demo-swatch': color }"
-            :aria-label="`色块 ${index + 1}（双击换色）`"
-            :aria-pressed="paint.gradient === null && paint.color === color"
-            :title="`色块 ${index + 1}（双击换色）`"
-            @click="selectSolid(color)"
-            @dblclick="openPanel(index)"
-          />
-          <button
-            type="button"
-            class="as-demo__swatch as-demo__swatch--gradient"
-            :class="{ 'is-active': paint.gradient !== null }"
-            :style="{ backgroundImage: `linear-gradient(135deg, ${gradientSets[gradientSet].join(', ')})` }"
-            aria-label="渐变色块"
-            :aria-pressed="paint.gradient !== null"
-            :disabled="!gradientAvailable"
-            title="渐变色块（双击换一套）"
-            @click="selectGradient"
-            @dblclick="cycleGradient"
-          />
-
-          <span class="as-demo__sep" aria-hidden="true" />
-
-          <button
-            type="button"
-            class="as-demo__btn"
-            :class="{ 'is-active': filled }"
-            :title="demo.actions.fill.name"
-            :aria-pressed="filled"
-            @click="toggleFill"
-          >
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.fill.icon)" />
-          </button>
-          <button type="button" class="as-demo__btn as-demo__btn--wide" :title="demo.actions.line.name">
-            <svg class="as-demo__linestyle" viewBox="0 0 46 20" aria-hidden="true">
-              <line x1="8" y1="10" x2="38" y2="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-            </svg>
-          </button>
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.undo.name} ${demo.actions.undo.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.undo.icon)" />
-          </button>
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.redo.name} ${demo.actions.redo.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.redo.icon)" />
-          </button>
-
-          <span class="as-demo__sep" aria-hidden="true" />
-
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.pin.name} ${demo.actions.pin.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.pin.icon)" />
-          </button>
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.longshot.name} ${demo.actions.longshot.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.longshot.icon)" />
-          </button>
-
-          <span class="as-demo__sep" aria-hidden="true" />
-
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.copy.name} ${demo.actions.copy.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.copy.icon)" />
-          </button>
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.quickSave.name} ${demo.actions.quickSave.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.quickSave.icon)" />
-          </button>
-          <button type="button" class="as-demo__btn" :title="`${demo.actions.save.name} ${demo.actions.save.hint}`">
-            <span class="as-demo__icon" :style="iconStyle(demo.actions.save.icon)" />
-          </button>
-        </div>
-      </div>
+      <DemoToolbar
+        :active-tool="activeTool"
+        :filled="filled"
+        :paint="paint"
+        :solid-colors="solidColors"
+        :gradient-set="gradientSet"
+        :gradient-available="gradientAvailable"
+        @set-tool="setTool"
+        @toggle-fill="toggleFill"
+        @select-solid="selectSolid"
+        @select-gradient="selectGradient"
+        @cycle-gradient="cycleGradient"
+        @open-panel="openPanel"
+      />
 
       <ColorPanel
         v-if="panelIndex !== null"
