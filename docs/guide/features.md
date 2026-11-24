@@ -34,7 +34,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次 Esc / 右键退出、语言、贴图位置、双击选区空白、窗口吸附与控件级捕捉" width="722" height="552" loading="lazy" decoding="async" />
+    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次 Esc / 右键退出、语言（跟随系统）、贴图位置、双击选区空白、窗口吸附与控件级捕捉，以及长截图日志的打开日志文件夹按钮" width="722" height="584" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「通用」页：开机自启、语言、贴图位置、双击动作，以及窗口吸附与控件级捕捉两个开关。</figcaption>
 </figure>
@@ -83,6 +83,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 ## 设置 {#settings}
 
 - 自绘面板，跟随系统深浅色
+- 界面语言：简体中文 / 繁體中文 / English / 日本語（设置 → 「通用」），默认跟随系统，不支持的系统语言回落 English；选完立即生效，界面不重开。界面文案全部编译期嵌入，标注内容的字体不跟界面语言变
 - 「外观」设置：调整软件主题，支持跟随系统切换、自适应；界面缩放可选自动或 100%–200% 固定档位，作用于全部界面（设置面板、覆盖层工具栏、贴图窗口）
 - 「工具栏」页：24 个元素逐项显隐（移动 + 10 个工具、3 个色块、填充·线型·撤销·重做·字体行、贴图·长截图、复制·快存·保存），组头可整组全显或全隐；隐藏只影响绘制，快捷键与输出照旧——藏了保存按钮，`Ctrl+S` 照样能存
 - 开机自启、「连按两次 Esc / 右键退出」、窗口吸附与控件级捕捉（默认都开，关掉后行为与旧版一致）
@@ -90,7 +91,7 @@ import ToolShowcase from '../.vitepress/theme/components/ToolShowcase.vue'
 - 快捷键页分「截图 / 输出 / 工具」三页，共 20 项，全部可改（含冲突检测与输入法兼容）；每一项都能清空为「未设置」，底部「恢复默认」一键还原全部快捷键
 - 贴图默认位置（一行开关：开 = 屏幕中间、关 = 原位置）、双击选区空白的动作（复制 / 贴图）、保存路径模板、主题；开关点完立即生效并写盘
 - 自动更新：启动后静默检查新版本，发现后弹托盘气泡；可以在「关于」→ 版本更新里关掉「启动时自动检查」，也可以在那里手动更新
-- 「关于」页：版本、许可、第三方组件清单、项目地址，以及「我要反馈」——一键把版本号、Windows 版本、显示器与显卡信息写进剪贴板（不收集用户名、保存路径与截图内容）
+- 「关于」页：版本、许可、「官网·永久免费」渠道、第三方组件清单、项目地址，以及「我要反馈」——一键把版本号、Windows 版本、显示器与显卡信息写进剪贴板（不收集用户名、保存路径与截图内容）；底部标明软件免费，从第三方购买请向卖方申请退款
 
 <figure class="as-shot">
   <div class="as-window">

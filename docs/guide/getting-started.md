@@ -1,6 +1,6 @@
 ---
 title: 快速上手
-description: 下载、启动与基本配置：AirSnip 是绿色单文件，解压即用，无需安装，首次运行需要管理员权限。
+description: 下载、启动与基本配置：AirSnip 是绿色单文件，解压即用，无需安装；管理员账户首次运行会弹一次 UAC 确认提权。
 ---
 
 # 快速上手
@@ -9,13 +9,13 @@ AirSnip 是绿色单文件，解压即用，不写注册表。下面是完整启
 
 ## 1. 下载并解压
 
-点击下载按钮获取 zip（约 0.87 MB，含文档与许可证），解压到任意目录。
+点击下载按钮获取 zip（约 0.89 MB，含文档与许可证），解压到任意目录。
 
 <DownloadCard />
 
 ## 2. 双击 airsnip.exe
 
-程序需要管理员权限（否则无法覆盖管理员权限的窗口），首次运行会弹 UAC，选「是」。
+管理员账户会弹一次 UAC 确认提权（这样才能截到管理员权限的窗口），选「是」；标准账户（公司 / 学校统一管理、拿不到 UAC 凭据）不弹 UAC，直接以普通权限运行，代价是截不到以管理员身份运行的程序窗口，启动时会弹一次托盘气泡说明原因。
 
 ::: tip 首次运行提示
 如遇 Windows SmartScreen 提示，点「更多信息」→「仍要运行」。
@@ -31,7 +31,7 @@ AirSnip 是绿色单文件，解压即用，不写注册表。下面是完整启
 
 <figure class="as-shot">
   <div class="as-window">
-    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次 Esc / 右键退出、语言、贴图位置、双击选区空白、窗口吸附与控件级捕捉" width="722" height="552" loading="lazy" decoding="async" />
+    <img src="/images/general.webp" alt="AirSnip 设置窗口的「通用」页，含开机自启、连按两次 Esc / 右键退出、语言（跟随系统）、贴图位置、双击选区空白、窗口吸附与控件级捕捉，以及长截图日志的打开日志文件夹按钮" width="722" height="584" loading="lazy" decoding="async" />
   </div>
   <figcaption>设置面板「通用」页：开机自启、语言、贴图位置、双击动作，以及窗口吸附与控件级捕捉。</figcaption>
 </figure>

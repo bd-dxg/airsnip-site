@@ -65,7 +65,7 @@ docs/
 只改 `docs/.vitepress/data/site.ts`：
 
 ```ts
-export const VERSION = 'v0.14.0'                   // 版本号
+export const VERSION = 'v1.0.0'                   // 版本号
 export const MIRROR_PREFIX = 'https://v4.gh-proxy.org/' // 国内加速站前缀
 ```
 
@@ -94,7 +94,7 @@ https://github.com/bd-dxg/airsnip/releases/download/<VERSION>/airsnip-<VERSION>-
 
 ## TODO（待作者 / 人工确认）
 
-1. **下载包体积口径**：`v0.14.0` 的 `airsnip-v0.14.0-win-x64.zip` 实测为 907,626 字节（约 0.87 MiB / 0.91 MB 十进制），页面写的是「约 0.87 MB」（按 MiB 计，与历次口径一致）。如需精确，改 `downloadInfo.packageSize`。
+1. **下载包体积口径**：`v1.0.0` 的 `airsnip-v1.0.0-win-x64.zip` 实测为 928,684 字节（约 0.89 MiB / 0.93 MB 十进制），页面写的是「约 0.89 MB」（按 MiB 计，与历次口径一致）；单个 exe 为 1,680,896 字节（约 1.60 MiB）。如需精确，改 `downloadInfo.packageSize` 与 `stats`。
 2. **截图为 WebP**：作者提供的原图为 `.webp`（文档示例写的是 `.jpg`）。为避免引入图片处理依赖，站点直接引用 webp，未做转码；`og:image` 同样是 webp，个别社交平台预览支持有限，如需要可另出一张 png。
 3. **图片体积**：7 张图片当前均小于 450 KB（最大为 `hero.webp` 约 417 KB），暂不需要压缩。
 4. **`about.webp` 中的赞助信息**：按文档要求原样展示，站点不新增任何赞助页或收款码。
