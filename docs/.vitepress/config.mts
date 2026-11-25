@@ -60,6 +60,7 @@ export default defineConfig({
       { text: '功能', link: '/guide/features' },
       { text: '快捷键', link: '/guide/shortcuts' },
       { text: '常见问题', link: '/guide/faq' },
+      { text: '关于', link: '/about/privacy' },
       { text: '下载', link: '/download' },
     ],
     sidebar: {
@@ -79,7 +80,7 @@ export default defineConfig({
           text: '关于',
           items: [
             { text: '性能数据与口径', link: '/about/performance' },
-            { text: '隐私说明', link: '/about/privacy' },
+            { text: '隐私政策', link: '/about/privacy' },
             { text: '开源与许可', link: '/about/license' },
           ],
         },
@@ -126,7 +127,7 @@ export default defineConfig({
       linkText: '回到首页',
     },
     footer: {
-      message: `GPL-3.0-only 开源 · <a href="${THIRD_PARTY_URL}" target="_blank" rel="noopener">第三方组件声明</a>`,
+      message: `GPL-3.0-only 开源 · <a href="${base}about/privacy">隐私政策</a> · <a href="${THIRD_PARTY_URL}" target="_blank" rel="noopener">第三方组件声明</a>`,
       copyright: '© AirSnip',
     },
   },
